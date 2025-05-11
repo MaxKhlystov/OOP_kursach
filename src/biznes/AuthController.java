@@ -26,6 +26,13 @@ public class AuthController {
         authWindow.getLoginButton().addActionListener(e -> handleLogin());
         authWindow.getExitButton().addActionListener(e -> System.exit(0));
 
+        workerRegisterWindow.getBackButton().addActionListener(e -> {
+            workerRegisterWindow.setVisible(false);
+            workerAuthWindow.setVisible(true);
+        });
+
+        workerRegisterWindow.getRegisterButton().addActionListener(e -> handleWorkerRegistration());
+
         authWindow.getWorkerButton().addActionListener(e -> {
             authWindow.setVisible(false);
             workerAuthWindow.setVisible(true);
@@ -58,6 +65,34 @@ public class AuthController {
             workerRegisterWindow.setVisible(false);
             workerAuthWindow.setVisible(true);
         });
+    }
+    private void handleWorkerRegistration() {
+        String login = workerRegisterWindow.getLoginField().getText();
+        String password = new String(workerRegisterWindow.getPasswordField().getPassword());
+        String confirmPassword = new String(workerRegisterWindow.getConfirmPasswordField().getPassword());
+        String key = workerRegisterWindow.getKeyField().getText();
+
+        if (!password.equals(confirmPassword)) {
+            JOptionPane.showMessageDialog(workerRegisterWindow,
+                    "Пароли не совпадают",
+                    "Ошибка",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (databaseManager.registerWorker(login, password, key)) {
+            JOptionPane.showMessageDialog(workerRegisterWindow,
+                    "Регистрация успешна!",
+                    "Успех",
+                    JOptionPane.INFORMATION_MESSAGE);
+            workerRegisterWindow.dispose();
+            workerAuthWindow.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(workerRegisterWindow,
+                    "Ошибка регистрации. Проверьте логин, пароль и ключ доступа.",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void handleLogin() {
