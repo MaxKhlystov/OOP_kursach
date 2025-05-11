@@ -50,7 +50,6 @@ public class AuthController {
 
         registerWindow.getRegisterButton().addActionListener(e -> handleRegistration());
 
-        // Обработчик входа для работников
         workerAuthWindow.getLoginButton().addActionListener(e -> handleWorkerLogin());
         workerAuthWindow.getBackButton().addActionListener(e -> {
             workerAuthWindow.setVisible(false);
@@ -66,6 +65,23 @@ public class AuthController {
             workerAuthWindow.setVisible(true);
         });
     }
+    //вход сотрудника
+    private void handleWorkerLogin() {
+        String login = workerAuthWindow.getLoginField().getText();
+        String password = new String(workerAuthWindow.getPasswordField().getPassword());
+        String key = workerAuthWindow.getKeyField().getText();
+
+        if (databaseManager.validateWorker(login, password, key)) {
+            workerAuthWindow.dispose();
+            new MainWindow(login).setVisible(true); // Открываем главное окно для сотрудника
+        } else {
+            JOptionPane.showMessageDialog(workerAuthWindow,
+                    "Неверные учетные данные",
+                    "Ошибка входа сотрудника",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    //регистрация сотрудника
     private void handleWorkerRegistration() {
         String login = workerRegisterWindow.getLoginField().getText();
         String password = new String(workerRegisterWindow.getPasswordField().getPassword());
@@ -94,7 +110,7 @@ public class AuthController {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
-
+    //вход клиента
     private void handleLogin() {
         String login = authWindow.getLoginField().getText();
         String password = new String(authWindow.getPasswordField().getPassword());
@@ -109,23 +125,7 @@ public class AuthController {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    private void handleWorkerLogin() {
-        String login = workerAuthWindow.getLoginField().getText();
-        String password = new String(workerAuthWindow.getPasswordField().getPassword());
-        String key = workerAuthWindow.getKeyField().getText();
-
-        if (databaseManager.validateWorker(login, password, key)) {
-            workerAuthWindow.dispose();
-            new MainWindow(login).setVisible(true); // Открываем главное окно для сотрудника
-        } else {
-            JOptionPane.showMessageDialog(workerAuthWindow,
-                    "Неверные учетные данные",
-                    "Ошибка входа сотрудника",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
+    //регистрация клиента
     private void handleRegistration() {
         String login = registerWindow.getLoginField().getText();
         String password = new String(registerWindow.getPasswordField().getPassword());
@@ -134,6 +134,13 @@ public class AuthController {
         if (!password.equals(confirmPassword)) {
             JOptionPane.showMessageDialog(registerWindow,
                     "Пароли не совпадают",
+                    "Ошибка",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (password.isEmpty() || login.isEmpty()){
+            JOptionPane.showMessageDialog(registerWindow,
+                    "Пароль или логин не могут быть пустыми",
                     "Ошибка",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -147,8 +154,8 @@ public class AuthController {
             registerWindow.dispose();
             authWindow.setVisible(true);
         } else {
-            JOptionPane.showMessageDialog(registerWindow,
-                    "Логин уже занят",
+            JOptionPane.showMessageDialog(workerRegisterWindow,
+                    "Ошибка регистрации. Проверьте логин, пароль и ключ доступа.",
                     "Ошибка",
                     JOptionPane.ERROR_MESSAGE);
         }
