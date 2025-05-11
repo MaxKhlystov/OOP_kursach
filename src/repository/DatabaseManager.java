@@ -14,6 +14,12 @@ public class DatabaseManager {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
             System.out.println("Подключение к базе данных успешно установлено.");
+            String sqlWorkers = "CREATE TABLE IF NOT EXISTS workers (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "login TEXT UNIQUE NOT NULL," +
+                    "password TEXT NOT NULL," +
+                    "access_key TEXT NOT NULL)";
+            stmt.execute(sqlWorkers);
 
             String sql = "CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -68,6 +74,43 @@ public class DatabaseManager {
             }
         } catch (SQLException e) {
             System.err.println("Ошибка при проверке пользователя:");
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public boolean registerWorker(String login, String password, String key) {
+        if (!key.equals("OOP")) {
+            System.out.println("Неверный ключ доступа");
+            return false;
+        }
+
+        String sql = "INSERT INTO workers(login, password, access_key) VALUES(?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, login);
+            pstmt.setString(2, password);
+            pstmt.setString(3, key);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean validateWorker(String login, String password, String key) {
+        String sql = "SELECT password, access_key FROM workers WHERE login = ?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, login);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("password").equals(password) &&
+                        rs.getString("access_key").equals(key);
+            }
+            return false;
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }

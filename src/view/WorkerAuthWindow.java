@@ -3,19 +3,21 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 
-public class AuthWindow extends JFrame {
+public class WorkerAuthWindow extends JFrame {
     private JLabel titleLabel;
     private JLabel loginLabel;
     private JLabel passwordLabel;
+    private JLabel keyLabel;
     private JTextField loginField;
     private JPasswordField passwordField;
+    private JTextField keyField;
     private JButton loginButton;
     private JButton registerButton;
-    private JButton workerButton;
+    private JButton backButton;
     private JButton exitButton;
 
-    public AuthWindow() {
-        super("Авторизация");
+    public WorkerAuthWindow() {
+        super("Авторизация сотрудника");
         initFrame();
         initComponents();
         buildUI();
@@ -23,38 +25,32 @@ public class AuthWindow extends JFrame {
 
     private void initFrame() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(350, 350);
+        setSize(350, 400);
         setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
         setLocationRelativeTo(null);
-
-        try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/media/bmw.png"));
-            setIconImage(icon.getImage());
-        } catch (Exception e) {
-            System.err.println("Не удалось загрузить иконку: " + e.getMessage());
-        }
     }
 
     private void initComponents() {
-        titleLabel = new JLabel("Technical Inspection", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD | Font.ITALIC, 20));
-        titleLabel.setForeground(new Color(0, 100, 200));
+        titleLabel = new JLabel("Авторизация сотрудника", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 30, 0));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
 
         loginLabel = new JLabel("Логин:");
-        loginField = new JTextField();
         passwordLabel = new JLabel("Пароль:");
+        keyLabel = new JLabel("Ключ доступа:");
+        loginField = new JTextField();
         passwordField = new JPasswordField();
+        keyField = new JTextField();
 
         loginButton = new JButton("Вход");
         registerButton = new JButton("Регистрация");
-        workerButton = new JButton("Я Сотрудник");
+        backButton = new JButton("Назад");
         exitButton = new JButton("Выход");
         loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         registerButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        workerButton.setAlignmentX(Component.ABORT);
-        exitButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        exitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
     }
 
     private void buildUI() {
@@ -65,12 +61,13 @@ public class AuthWindow extends JFrame {
         contentPanel.add(createInputPanel(loginLabel, loginField));
         contentPanel.add(Box.createRigidArea(new Dimension(0, 15)));
         contentPanel.add(createInputPanel(passwordLabel, passwordField));
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        contentPanel.add(createInputPanel(keyLabel, keyField));
         contentPanel.add(Box.createRigidArea(new Dimension(0, 25)));
         contentPanel.add(loginButton);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         contentPanel.add(registerButton);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 25)));
-
         JPanel bottomButtonPanel = new JPanel();
         bottomButtonPanel.setLayout(new BorderLayout());
         bottomButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
@@ -80,7 +77,7 @@ public class AuthWindow extends JFrame {
         bottomButtonPanel.add(leftPanel, BorderLayout.WEST);
 
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        rightPanel.add(workerButton);
+        rightPanel.add(backButton);
         bottomButtonPanel.add(rightPanel, BorderLayout.EAST);
 
         contentPanel.add(bottomButtonPanel);
@@ -100,8 +97,9 @@ public class AuthWindow extends JFrame {
     // Геттеры
     public JButton getLoginButton() { return loginButton; }
     public JButton getRegisterButton() { return registerButton; }
-    public JButton getExitButton(){return exitButton;}
-    public JButton getWorkerButton(){return workerButton;}
+    public JButton getBackButton() { return backButton; }
+    public JButton getExitButton() { return exitButton; }
     public JTextField getLoginField() { return loginField; }
     public JPasswordField getPasswordField() { return passwordField; }
+    public JTextField getKeyField() { return keyField; }
 }

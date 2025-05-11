@@ -1,42 +1,63 @@
 package biznes;
 
 import repository.DatabaseManager;
-import view.AuthWindow;
-import view.RegisterWindow;
-import view.MainWindow;
+import view.*;
+
 import javax.swing.*;
 
 public class AuthController {
     private AuthWindow authWindow;
     private RegisterWindow registerWindow;
     private DatabaseManager databaseManager;
+    private WorkerAuthWindow workerAuthWindow;
+    private WorkerRegisterWindow workerRegisterWindow;
 
     public AuthController(AuthWindow authWindow, RegisterWindow registerWindow) {
         this.authWindow = authWindow;
         this.registerWindow = registerWindow;
         this.databaseManager = new DatabaseManager();
+        this.workerAuthWindow = new WorkerAuthWindow();
+        this.workerRegisterWindow = new WorkerRegisterWindow();
         initControllers();
         System.out.println("AuthController инициализирован");
     }
 
     private void initControllers() {
-        // Обработчик входа
         authWindow.getLoginButton().addActionListener(e -> handleLogin());
+        authWindow.getExitButton().addActionListener(e -> System.exit(0));
 
-        // Обработчик регистрации
+        authWindow.getWorkerButton().addActionListener(e -> {
+            authWindow.setVisible(false);
+            workerAuthWindow.setVisible(true);
+        });
+
         authWindow.getRegisterButton().addActionListener(e -> {
             authWindow.setVisible(false);
             registerWindow.setVisible(true);
         });
 
-        // Обработчик возврата с регистрации
         registerWindow.getBackButton().addActionListener(e -> {
             registerWindow.setVisible(false);
             authWindow.setVisible(true);
         });
 
-        // Обработчик подтверждения регистрации
         registerWindow.getRegisterButton().addActionListener(e -> handleRegistration());
+
+        // Обработчик входа для работников
+        workerAuthWindow.getLoginButton().addActionListener(e -> handleWorkerLogin());
+        workerAuthWindow.getBackButton().addActionListener(e -> {
+            workerAuthWindow.setVisible(false);
+            authWindow.setVisible(true);
+        });
+        workerAuthWindow.getRegisterButton().addActionListener(e -> {
+            workerAuthWindow.setVisible(false);
+            workerRegisterWindow.setVisible(true);
+        });
+
+        workerRegisterWindow.getBackButton().addActionListener(e -> {
+            workerRegisterWindow.setVisible(false);
+            workerAuthWindow.setVisible(true);
+        });
     }
 
     private void handleLogin() {
@@ -45,11 +66,27 @@ public class AuthController {
 
         if (databaseManager.validateUser(login, password)) {
             authWindow.dispose();
-            new MainWindow(login).setVisible(true); // Передаем логин в главное окно
+            new MainWindow(login).setVisible(true);
         } else {
             JOptionPane.showMessageDialog(authWindow,
                     "Неверные учетные данные",
                     "Ошибка входа",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void handleWorkerLogin() {
+        String login = workerAuthWindow.getLoginField().getText();
+        String password = new String(workerAuthWindow.getPasswordField().getPassword());
+        String key = workerAuthWindow.getKeyField().getText();
+
+        if (databaseManager.validateWorker(login, password, key)) {
+            workerAuthWindow.dispose();
+            new MainWindow(login).setVisible(true); // Открываем главное окно для сотрудника
+        } else {
+            JOptionPane.showMessageDialog(workerAuthWindow,
+                    "Неверные учетные данные",
+                    "Ошибка входа сотрудника",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
