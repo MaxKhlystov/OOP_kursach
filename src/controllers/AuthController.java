@@ -1,4 +1,4 @@
-package biznes;
+package controllers;
 
 import repository.DatabaseManager;
 import view.*;
@@ -8,14 +8,14 @@ import javax.swing.*;
 public class AuthController {
     private AuthWindow authWindow;
     private RegisterWindow registerWindow;
-    private DatabaseManager databaseManager;
     private WorkerAuthWindow workerAuthWindow;
     private WorkerRegisterWindow workerRegisterWindow;
+    private DatabaseManager databaseManager;
 
-    public AuthController(AuthWindow authWindow, RegisterWindow registerWindow) {
+    public AuthController(AuthWindow authWindow, RegisterWindow registerWindow, DatabaseManager dbManager) {
         this.authWindow = authWindow;
         this.registerWindow = registerWindow;
-        this.databaseManager = new DatabaseManager();
+        this.databaseManager = dbManager;
         this.workerAuthWindow = new WorkerAuthWindow();
         this.workerRegisterWindow = new WorkerRegisterWindow();
         initControllers();
@@ -25,6 +25,7 @@ public class AuthController {
     private void initControllers() {
         authWindow.getLoginButton().addActionListener(e -> handleLogin());
         authWindow.getExitButton().addActionListener(e -> System.exit(0));
+        workerAuthWindow.getExitButton().addActionListener(e-> System.exit(0));
 
         workerRegisterWindow.getBackButton().addActionListener(e -> {
             workerRegisterWindow.setVisible(false);
@@ -73,7 +74,10 @@ public class AuthController {
 
         if (databaseManager.validateWorker(login, password, key)) {
             workerAuthWindow.dispose();
-            new MainWindow(login).setVisible(true); // Открываем главное окно для сотрудника
+            int userId = databaseManager.getUserId(login);
+            MainWindow mainWindow = new MainWindow(login, userId);
+            new MainWindowController(mainWindow, login, userId);
+            mainWindow.setVisible(true); // Открываем главное окно для сотрудника
         } else {
             JOptionPane.showMessageDialog(workerAuthWindow,
                     "Неверные учетные данные",
@@ -116,8 +120,16 @@ public class AuthController {
         String password = new String(authWindow.getPasswordField().getPassword());
 
         if (databaseManager.validateUser(login, password)) {
-            authWindow.dispose();
-            new MainWindow(login).setVisible(true);
+            int userId = databaseManager.getUserId(login); // Получаем ID
+            if (userId != -1) {
+                authWindow.dispose();
+                new MainWindow(login, userId).setVisible(true); // Передаём ID
+            } else {
+                JOptionPane.showMessageDialog(authWindow,
+                        "Ошибка получения данных пользователя",
+                        "Ошибка",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         } else {
             JOptionPane.showMessageDialog(authWindow,
                     "Неверные учетные данные",
