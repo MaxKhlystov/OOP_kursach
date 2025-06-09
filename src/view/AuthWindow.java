@@ -3,7 +3,7 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 
-public class AuthWindow extends JFrame {
+public class AuthWindow extends JFrame implements AuthView {
     private JLabel titleLabel;
     private JLabel loginLabel;
     private JLabel passwordLabel;
@@ -97,11 +97,48 @@ public class AuthWindow extends JFrame {
         return panel;
     }
 
-    // Геттеры
+    // Реализация методов интерфейса AuthView
+    @Override
+    public String getLogin() {
+        return loginField.getText();
+    }
+
+    @Override
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    @Override
+    public void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Ошибка", JOptionPane.ERROR_MESSAGE);
+    }
+
+    @Override
+    public void navigateToMainWindow(String login, int userId) {
+        this.dispose();
+        MainWindow mainWindow = new MainWindow(login, userId);
+        new MainWindowController(mainWindow, login, userId);
+        mainWindow.setVisible(true);
+    }
+
+    @Override
+    public void navigateToRegister() {
+        this.setVisible(false);
+    }
+
+    @Override
+    public void navigateToWorkerAuth() {
+        this.setVisible(false);
+    }
+
+    @Override
+    public void close() {
+        this.dispose();
+    }
+
+    // Геттеры для кнопок (нужны для контроллера)
     public JButton getLoginButton() { return loginButton; }
     public JButton getRegisterButton() { return registerButton; }
-    public JButton getExitButton(){return exitButton;}
-    public JButton getWorkerButton(){return workerButton;}
-    public JTextField getLoginField() { return loginField; }
-    public JPasswordField getPasswordField() { return passwordField; }
+    public JButton getWorkerButton() { return workerButton; }
+    public JButton getExitButton() { return exitButton; }
 }

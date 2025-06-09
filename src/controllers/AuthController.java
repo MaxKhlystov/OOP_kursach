@@ -3,175 +3,114 @@ package controllers;
 import repository.DatabaseManager;
 import view.*;
 
-import javax.swing.*;
-
 public class AuthController {
-    private AuthWindow authWindow;
-    private RegisterWindow registerWindow;
-    private WorkerAuthWindow workerAuthWindow;
-    private WorkerRegisterWindow workerRegisterWindow;
-    private DatabaseManager databaseManager;
+    private final AuthView authView;
+    private final RegisterView registerView;
+    private final WorkerAuthView workerAuthView;
+    private final WorkerRegisterView workerRegisterView;
+    private final DatabaseManager databaseManager;
 
-    public AuthController(AuthWindow authWindow, RegisterWindow registerWindow, DatabaseManager dbManager) {
-        this.authWindow = authWindow;
-        this.registerWindow = registerWindow;
+    public AuthController(AuthView authView, RegisterView registerView,
+                          WorkerAuthView workerAuthView, WorkerRegisterView workerRegisterView,
+                          DatabaseManager dbManager) {
+        this.authView = authView;
+        this.registerView = registerView;
+        this.workerAuthView = workerAuthView;
+        this.workerRegisterView = workerRegisterView;
         this.databaseManager = dbManager;
-        this.workerAuthWindow = new WorkerAuthWindow();
-        this.workerRegisterWindow = new WorkerRegisterWindow();
         initControllers();
-        System.out.println("AuthController инициализирован");
     }
 
     private void initControllers() {
-        authWindow.getLoginButton().addActionListener(e -> handleLogin());
-        authWindow.getExitButton().addActionListener(e -> System.exit(0));
-        workerAuthWindow.getExitButton().addActionListener(e-> System.exit(0));
+        // Обработка кнопок AuthWindow
+        ((AuthWindow) authView).getLoginButton().addActionListener(e -> handleLogin());
+        ((AuthWindow) authView).getRegisterButton().addActionListener(e -> authView.navigateToRegister());
+        ((AuthWindow) authView).getWorkerButton().addActionListener(e -> authView.navigateToWorkerAuth());
+        ((AuthWindow) authView).getExitButton().addActionListener(e -> System.exit(0));
 
-        workerRegisterWindow.getBackButton().addActionListener(e -> {
-            workerRegisterWindow.setVisible(false);
-            workerAuthWindow.setVisible(true);
-        });
+        // Обработка кнопок RegisterWindow
+        ((RegisterWindow) registerView).getRegisterButton().addActionListener(e -> handleRegistration());
+        ((RegisterWindow) registerView).getBackButton().addActionListener(e -> registerView.navigateToAuth());
 
-        workerRegisterWindow.getRegisterButton().addActionListener(e -> handleWorkerRegistration());
+        // Обработка кнопок WorkerAuthWindow
+        ((WorkerAuthWindow) workerAuthView).getLoginButton().addActionListener(e -> handleWorkerLogin());
+        ((WorkerAuthWindow) workerAuthView).getRegisterButton().addActionListener(e -> workerAuthView.navigateToWorkerRegister());
+        ((WorkerAuthWindow) workerAuthView).getBackButton().addActionListener(e -> workerAuthView.navigateToAuth());
+        ((WorkerAuthWindow) workerAuthView).getExitButton().addActionListener(e -> System.exit(0));
 
-        authWindow.getWorkerButton().addActionListener(e -> {
-            authWindow.setVisible(false);
-            workerAuthWindow.setVisible(true);
-        });
-
-        authWindow.getRegisterButton().addActionListener(e -> {
-            authWindow.setVisible(false);
-            registerWindow.setVisible(true);
-        });
-
-        registerWindow.getBackButton().addActionListener(e -> {
-            registerWindow.setVisible(false);
-            authWindow.setVisible(true);
-        });
-
-        registerWindow.getRegisterButton().addActionListener(e -> handleRegistration());
-
-        workerAuthWindow.getLoginButton().addActionListener(e -> handleWorkerLogin());
-        workerAuthWindow.getBackButton().addActionListener(e -> {
-            workerAuthWindow.setVisible(false);
-            authWindow.setVisible(true);
-        });
-        workerAuthWindow.getRegisterButton().addActionListener(e -> {
-            workerAuthWindow.setVisible(false);
-            workerRegisterWindow.setVisible(true);
-        });
-
-        workerRegisterWindow.getBackButton().addActionListener(e -> {
-            workerRegisterWindow.setVisible(false);
-            workerAuthWindow.setVisible(true);
-        });
+        // Обработка кнопок WorkerRegisterWindow
+        ((WorkerRegisterWindow) workerRegisterView).getRegisterButton().addActionListener(e -> handleWorkerRegistration());
+        ((WorkerRegisterWindow) workerRegisterView).getBackButton().addActionListener(e -> workerRegisterView.navigateToWorkerAuth());
     }
-    //вход сотрудника
-    private void handleWorkerLogin() {
-        String login = workerAuthWindow.getLoginField().getText();
-        String password = new String(workerAuthWindow.getPasswordField().getPassword());
-        String key = workerAuthWindow.getKeyField().getText();
 
-        if (databaseManager.validateWorker(login, password, key)) {
-            workerAuthWindow.dispose();
-            int userId = databaseManager.getUserId(login);
-            MainWindow mainWindow = new MainWindow(login, userId);
-            new MainWindowController(mainWindow, login, userId);
-            mainWindow.setVisible(true); // Открываем главное окно для сотрудника
-        } else {
-            JOptionPane.showMessageDialog(workerAuthWindow,
-                    "Неверные учетные данные",
-                    "Ошибка входа сотрудника",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    //регистрация сотрудника
-    private void handleWorkerRegistration() {
-        String login = workerRegisterWindow.getLoginField().getText();
-        String password = new String(workerRegisterWindow.getPasswordField().getPassword());
-        String confirmPassword = new String(workerRegisterWindow.getConfirmPasswordField().getPassword());
-        String key = workerRegisterWindow.getKeyField().getText();
-
-        if (!password.equals(confirmPassword)) {
-            JOptionPane.showMessageDialog(workerRegisterWindow,
-                    "Пароли не совпадают",
-                    "Ошибка",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (databaseManager.registerWorker(login, password, key)) {
-            JOptionPane.showMessageDialog(workerRegisterWindow,
-                    "Регистрация успешна!",
-                    "Успех",
-                    JOptionPane.INFORMATION_MESSAGE);
-            workerRegisterWindow.dispose();
-            workerAuthWindow.setVisible(true);
-        } else {
-            JOptionPane.showMessageDialog(workerRegisterWindow,
-                    "Ошибка регистрации. Проверьте логин, пароль и ключ доступа.",
-                    "Ошибка",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    //вход клиента
     private void handleLogin() {
-        String login = authWindow.getLoginField().getText();
-        String password = new String(authWindow.getPasswordField().getPassword());
+        String login = authView.getLogin();
+        String password = authView.getPassword();
 
         if (databaseManager.validateUser(login, password)) {
-            int userId = databaseManager.getUserId(login); // Получаем ID
+            int userId = databaseManager.getUserId(login);
             if (userId != -1) {
-                authWindow.dispose();
-                MainWindow mainWindow = new MainWindow(login, userId);
-                new MainWindowController(mainWindow, login, userId);
-                mainWindow.setVisible(true);// Передаём ID
+                authView.navigateToMainWindow(login, userId);
             } else {
-                JOptionPane.showMessageDialog(authWindow,
-                        "Ошибка получения данных пользователя",
-                        "Ошибка",
-                        JOptionPane.ERROR_MESSAGE);
+                authView.showError("Ошибка получения данных пользователя");
             }
         } else {
-            JOptionPane.showMessageDialog(authWindow,
-                    "Неверные учетные данные",
-                    "Ошибка входа",
-                    JOptionPane.ERROR_MESSAGE);
+            authView.showError("Неверные учетные данные");
         }
     }
-    //регистрация клиента
+
     private void handleRegistration() {
-        String login = registerWindow.getLoginField().getText();
-        String password = new String(registerWindow.getPasswordField().getPassword());
-        String confirmPassword = new String(registerWindow.getConfirmPasswordField().getPassword());
+        String login = registerView.getLogin();
+        String password = registerView.getPassword();
+        String confirmPassword = registerView.getConfirmPassword();
 
         if (!password.equals(confirmPassword)) {
-            JOptionPane.showMessageDialog(registerWindow,
-                    "Пароли не совпадают",
-                    "Ошибка",
-                    JOptionPane.WARNING_MESSAGE);
+            registerView.showError("Пароли не совпадают");
             return;
         }
-        if (password.isEmpty() || login.isEmpty()){
-            JOptionPane.showMessageDialog(registerWindow,
-                    "Пароль или логин не могут быть пустыми",
-                    "Ошибка",
-                    JOptionPane.WARNING_MESSAGE);
+
+        if (password.isEmpty() || login.isEmpty()) {
+            registerView.showError("Пароль или логин не могут быть пустыми");
             return;
         }
 
         if (databaseManager.registerUser(login, password)) {
-            JOptionPane.showMessageDialog(registerWindow,
-                    "Регистрация успешна!",
-                    "Успех",
-                    JOptionPane.INFORMATION_MESSAGE);
-            registerWindow.dispose();
-            authWindow.setVisible(true);
+            registerView.showSuccess("Регистрация успешна!");
+            registerView.navigateToAuth();
         } else {
-            JOptionPane.showMessageDialog(workerRegisterWindow,
-                    "Ошибка регистрации. Проверьте логин, пароль и ключ доступа.",
-                    "Ошибка",
-                    JOptionPane.ERROR_MESSAGE);
+            registerView.showError("Ошибка регистрации. Проверьте логин и пароль.");
+        }
+    }
+
+    private void handleWorkerLogin() {
+        String login = workerAuthView.getLogin();
+        String password = workerAuthView.getPassword();
+        String key = workerAuthView.getKey();
+
+        if (databaseManager.validateWorker(login, password, key)) {
+            int userId = databaseManager.getUserId(login);
+            workerAuthView.navigateToMainWindow(login, userId);
+        } else {
+            workerAuthView.showError("Неверные учетные данные");
+        }
+    }
+
+    private void handleWorkerRegistration() {
+        String login = workerRegisterView.getLogin();
+        String password = workerRegisterView.getPassword();
+        String confirmPassword = workerRegisterView.getConfirmPassword();
+        String key = workerRegisterView.getKey();
+
+        if (!password.equals(confirmPassword)) {
+            workerRegisterView.showError("Пароли не совпадают");
+            return;
+        }
+
+        if (databaseManager.registerWorker(login, password, key)) {
+            workerRegisterView.showSuccess("Регистрация успешна!");
+            workerRegisterView.navigateToWorkerAuth();
+        } else {
+            workerRegisterView.showError("Ошибка регистрации. Проверьте логин, пароль и ключ доступа.");
         }
     }
 }

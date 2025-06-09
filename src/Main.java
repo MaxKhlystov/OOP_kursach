@@ -1,23 +1,20 @@
 import controllers.AuthController;
 import repository.DatabaseManager;
-import view.AuthWindow;
-import view.RegisterWindow;
+import view.*;
 
 import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            AuthWindow authWindow = new AuthWindow();
-            RegisterWindow registerWindow = new RegisterWindow();
+        DatabaseManager dbManager = new DatabaseManager();
 
-            // Создаём DatabaseManager один раз
-            DatabaseManager dbManager = new DatabaseManager();
+        AuthView authView = WindowFactory.createAuthView();
+        RegisterView registerView = WindowFactory.createRegisterView();
+        WorkerAuthView workerAuthView = WindowFactory.createWorkerAuthView();
+        WorkerRegisterView workerRegisterView = WindowFactory.createWorkerRegisterView();
 
-            // Передаём dbManager в контроллер
-            new AuthController(authWindow, registerWindow, dbManager);
+        new AuthController(authView, registerView, workerAuthView, workerRegisterView, dbManager);
 
-            authWindow.setVisible(true);
-        });
+        ((JFrame) authView).setVisible(true);
     }
 }

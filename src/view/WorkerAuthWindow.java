@@ -3,7 +3,7 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 
-public class WorkerAuthWindow extends JFrame {
+public class WorkerAuthWindow extends JFrame implements WorkerAuthView {
     private JLabel titleLabel;
     private JLabel loginLabel;
     private JLabel passwordLabel;
@@ -68,6 +68,7 @@ public class WorkerAuthWindow extends JFrame {
         contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         contentPanel.add(registerButton);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 25)));
+
         JPanel bottomButtonPanel = new JPanel();
         bottomButtonPanel.setLayout(new BorderLayout());
         bottomButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
@@ -94,12 +95,53 @@ public class WorkerAuthWindow extends JFrame {
         return panel;
     }
 
-    // Геттеры
+    // Реализация методов интерфейса WorkerAuthView
+    @Override
+    public String getLogin() {
+        return loginField.getText();
+    }
+
+    @Override
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    @Override
+    public String getKey() {
+        return keyField.getText();
+    }
+
+    @Override
+    public void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Ошибка", JOptionPane.ERROR_MESSAGE);
+    }
+
+    @Override
+    public void navigateToMainWindow(String login, int userId) {
+        this.dispose();
+        MainWindow mainWindow = new MainWindow(login, userId);
+        new MainWindowController(mainWindow, login, userId);
+        mainWindow.setVisible(true);
+    }
+
+    @Override
+    public void navigateToWorkerRegister() {
+        this.setVisible(false);
+    }
+
+    @Override
+    public void navigateToAuth() {
+        this.setVisible(false);
+    }
+
+    @Override
+    public void close() {
+        this.dispose();
+    }
+
+    // Геттеры для кнопок
     public JButton getLoginButton() { return loginButton; }
     public JButton getRegisterButton() { return registerButton; }
     public JButton getBackButton() { return backButton; }
     public JButton getExitButton() { return exitButton; }
-    public JTextField getLoginField() { return loginField; }
-    public JPasswordField getPasswordField() { return passwordField; }
-    public JTextField getKeyField() { return keyField; }
 }

@@ -3,7 +3,7 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 
-public class RegisterWindow extends JFrame {
+public class RegisterWindow extends JFrame implements RegisterView {
     private JLabel titleLabel;
     private JLabel loginLabel;
     private JLabel passwordLabel;
@@ -81,10 +81,43 @@ public class RegisterWindow extends JFrame {
         return panel;
     }
 
-    // Геттеры
+    // Реализация методов интерфейса RegisterView
+    @Override
+    public String getLogin() {
+        return loginField.getText();
+    }
+
+    @Override
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    @Override
+    public String getConfirmPassword() {
+        return new String(confirmPasswordField.getPassword());
+    }
+
+    @Override
+    public void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Ошибка", JOptionPane.ERROR_MESSAGE);
+    }
+
+    @Override
+    public void showSuccess(String message) {
+        JOptionPane.showMessageDialog(this, message, "Успех", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    @Override
+    public void navigateToAuth() {
+        this.setVisible(false);
+    }
+
+    @Override
+    public void close() {
+        this.dispose();
+    }
+
+    // Геттеры для кнопок
     public JButton getRegisterButton() { return registerButton; }
     public JButton getBackButton() { return backButton; }
-    public JTextField getLoginField() { return loginField; }
-    public JPasswordField getPasswordField() { return passwordField; }
-    public JPasswordField getConfirmPasswordField() { return confirmPasswordField; }
 }
