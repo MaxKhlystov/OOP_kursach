@@ -1,3 +1,5 @@
+import controllers.AuthController;
+import repository.DatabaseManager;
 import view.AuthWindow;
 import view.RegisterWindow;
 
@@ -9,7 +11,11 @@ public class Main {
             AuthWindow authWindow = new AuthWindow();
             RegisterWindow registerWindow = new RegisterWindow();
 
-            new biznes.AuthController(authWindow, registerWindow);
+            // Создаём DatabaseManager один раз
+            DatabaseManager dbManager = new DatabaseManager();
+
+            // Передаём dbManager в контроллер
+            new AuthController(authWindow, registerWindow, dbManager);
 
             authWindow.setVisible(true);
         });

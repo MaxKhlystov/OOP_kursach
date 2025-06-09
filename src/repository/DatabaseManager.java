@@ -21,13 +21,14 @@ public class DatabaseManager {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
 
-            // Существующие таблицы (users и workers)
+            // Таблица users
             String sqlUsers = "CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT UNIQUE NOT NULL," +
                     "password TEXT NOT NULL)";
             stmt.execute(sqlUsers);
 
+            // Таблица workers
             String sqlWorkers = "CREATE TABLE IF NOT EXISTS workers (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT UNIQUE NOT NULL," +
@@ -35,13 +36,14 @@ public class DatabaseManager {
                     "access_key TEXT NOT NULL)";
             stmt.execute(sqlWorkers);
 
-            // Новая таблица cars
+            // Таблица cars с problem_description
             String sqlCars = "CREATE TABLE IF NOT EXISTS cars (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "name TEXT NOT NULL," +
                     "vin TEXT NOT NULL UNIQUE," +
                     "license_plate TEXT NOT NULL UNIQUE," +
                     "owner_id INTEGER NOT NULL," +
+                    "problem_description TEXT," +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                     "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE)";
             stmt.execute(sqlCars);
@@ -206,12 +208,6 @@ public class DatabaseManager {
         return cars;
     }
 
-    /**
-     * Удаляет автомобиль
-     * @param carId ID автомобиля
-     * @param ownerId ID владельца (для проверки прав)
-     * @return true если удаление успешно
-     */
     public static boolean deleteCar(int carId, int ownerId) {
         String sql = "DELETE FROM cars WHERE id = ? AND owner_id = ?";
 

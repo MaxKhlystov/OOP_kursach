@@ -123,7 +123,9 @@ public class AuthController {
             int userId = databaseManager.getUserId(login); // Получаем ID
             if (userId != -1) {
                 authWindow.dispose();
-                new MainWindow(login, userId).setVisible(true); // Передаём ID
+                MainWindow mainWindow = new MainWindow(login, userId);
+                new MainWindowController(mainWindow, login, userId);
+                mainWindow.setVisible(true);// Передаём ID
             } else {
                 JOptionPane.showMessageDialog(authWindow,
                         "Ошибка получения данных пользователя",

@@ -4,6 +4,7 @@ import model.Car;
 import repository.DatabaseManager;
 import view.AuthWindow;
 import view.MainWindow;
+import view.RegisterWindow;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,11 +15,13 @@ public class MainWindowController {
     private MainWindow view;
     private int userId;
     private String username;
+    private DatabaseManager databaseManager;
 
     public MainWindowController(MainWindow view, String username, int userId) {
         this.view = view;
         this.username = username;
         this.userId = userId;
+        this.databaseManager = new DatabaseManager();
         initController();
     }
 
@@ -117,45 +120,60 @@ public class MainWindowController {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.GRAY),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        card.setPreferredSize(new Dimension(200, 150));
+        card.setPreferredSize(new Dimension(220, 150));
 
+        // Создаем элементы перед использованием
         JLabel nameLabel = new JLabel(car.getName());
-        nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-
         JLabel plateLabel = new JLabel(car.getLicensePlate());
-        plateLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-
         JLabel statusLabel = new JLabel("Статус: В ремонте");
+        JButton detailsBtn = new JButton("Подробнее");
+        JButton deleteBtn = new JButton("Удалить");
+
+        // Настраиваем выравнивание ПОСЛЕ создания элементов
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        plateLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Настройка шрифтов
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        plateLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 12));
 
-        JButton detailsBtn = new JButton("Подробнее");
-        detailsBtn.addActionListener(e -> showCarDetails(car));
-
-        JButton deleteBtn = new JButton("Удалить");
-        deleteBtn.addActionListener(e -> deleteCar(car));
-
+        // Панель для кнопок
         JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
         buttonPanel.add(detailsBtn);
+        buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         buttonPanel.add(deleteBtn);
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Добавляем элементы на карточку
+        card.add(Box.createVerticalGlue());
         card.add(nameLabel);
+        card.add(Box.createRigidArea(new Dimension(0, 5)));
         card.add(plateLabel);
+        card.add(Box.createRigidArea(new Dimension(0, 5)));
         card.add(statusLabel);
         card.add(Box.createVerticalGlue());
         card.add(buttonPanel);
+
+        // Добавляем обработчики
+        detailsBtn.addActionListener(e -> showCarDetails(car));
+        deleteBtn.addActionListener(e -> deleteCar(car));
 
         return card;
     }
 
     private void showCarDetails(Car car) {
-        JDialog detailsDialog = new JDialog(view, "Подробности автомобиля", true);
+        JDialog detailsDialog = new JDialog(view, "Подробности: " + car.getName(), true); // Добавляем название в заголовок
         detailsDialog.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(30, 10, 30, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
+        // Остальной код метода остается без изменений
         addDetailRow(detailsDialog, gbc, "Марка и модель:", car.getName(), 0);
         addDetailRow(detailsDialog, gbc, "VIN номер:", car.getVin(), 1);
         addDetailRow(detailsDialog, gbc, "Гос. номер:", car.getLicensePlate(), 2);
@@ -212,7 +230,10 @@ public class MainWindowController {
 
     private void handleLogout() {
         view.dispose();
-        new AuthWindow().setVisible(true);
+        AuthWindow authWindow = new AuthWindow();
+        RegisterWindow registerWindow = new RegisterWindow();
+        new AuthController(authWindow, registerWindow, this.databaseManager);
+        authWindow.setVisible(true);
     }
 
     private void addFormField(JDialog dialog, GridBagConstraints gbc, String label, JComponent field, int row) {
