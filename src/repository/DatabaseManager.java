@@ -68,6 +68,27 @@ public class DatabaseManager {
         }
     }
 
+    public boolean updateCar(Car car) {
+        String sql = "UPDATE cars SET name = ?, license_plate = ?, problem_description = ? WHERE id = ? AND owner_id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, car.getName());
+            pstmt.setString(2, car.getLicensePlate());
+            pstmt.setString(3, car.getProblemDescription());
+            pstmt.setInt(4, car.getId());
+            pstmt.setInt(5, car.getOwnerId());
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при обновлении автомобиля:");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean registerUser(String login, String password) {
         String sql = "INSERT INTO users(login, password) VALUES(?, ?)";
         System.out.println("Попытка регистрации пользователя: " + login);
@@ -246,7 +267,7 @@ public class DatabaseManager {
         return cars;
     }
 
-    public static boolean deleteCar(int carId, int ownerId) {
+    public boolean deleteCar(int carId, int ownerId) {
         String sql = "DELETE FROM cars WHERE id = ? AND owner_id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
