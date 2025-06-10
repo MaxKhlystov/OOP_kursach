@@ -6,5 +6,7 @@ public interface WorkerAuthView {
     String getKey();
     void showError(String message);
     void navigateToMainWindow(String login, int userId);
+    void navigateToWorkerRegister();
+    void navigateToUserAuth();
     void close();
 }

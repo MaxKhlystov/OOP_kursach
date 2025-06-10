@@ -112,6 +112,13 @@ public class RegisterWindow extends JFrame implements RegisterView {
     @Override
     public void navigateToAuth() {
         this.setVisible(false);
+        this.setVisible(false);
+        for (Window window : Window.getWindows()) {
+            if (window instanceof AuthWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
     }
 
     @Override

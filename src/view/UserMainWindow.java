@@ -133,8 +133,12 @@ public class UserMainWindow extends JFrame implements UserMainView {
     @Override
     public void navigateToAuth() {
         this.dispose();
-        AuthWindow authWindow = new AuthWindow();
-        authWindow.setVisible(true);
+        for (Window window : Window.getWindows()) {
+            if (window instanceof AuthWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
     }
 
     @Override

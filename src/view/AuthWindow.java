@@ -118,7 +118,8 @@ public class AuthWindow extends JFrame implements AuthView {
 
     @Override
     public void navigateToMainWindow(String login, int userId) {
-        this.dispose();
+        clearFields();
+        this.setVisible(false);
         UserMainWindow mainWindow = new UserMainWindow(login, userId);
         new UserMainWindowController(mainWindow, login, userId);
         mainWindow.setVisible(true);
@@ -126,17 +127,36 @@ public class AuthWindow extends JFrame implements AuthView {
 
     @Override
     public void navigateToRegister() {
+        clearFields();
         this.setVisible(false);
+        for (Window window : Window.getWindows()) {
+            if (window instanceof RegisterWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
     }
 
     @Override
     public void navigateToWorkerAuth() {
+        clearFields();
         this.setVisible(false);
+        for (Window window : Window.getWindows()) {
+            if (window instanceof WorkerAuthWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
     }
 
     @Override
     public void close() {
         this.dispose();
+    }
+
+    private void clearFields(){
+        loginField.setText("");
+        passwordField.setText("");
     }
 
     // Геттеры для кнопок (нужны для контроллера)

@@ -30,14 +30,8 @@ public class AuthController {
     private void initControllers() {
         // Обработка кнопок AuthWindow
         ((AuthWindow) authView).getLoginButton().addActionListener(e -> handleLogin());
-        ((AuthWindow) authView).getRegisterButton().addActionListener(e ->{
-            ((JFrame) authView).setVisible(false);
-            ((JFrame) registerView).setVisible(true);
-        });
-        ((AuthWindow) authView).getWorkerButton().addActionListener(e ->{
-            ((JFrame) authView).setVisible(false);
-            ((JFrame) workerAuthView).setVisible(true);
-        });
+        ((AuthWindow) authView).getRegisterButton().addActionListener(e -> authView.navigateToRegister());
+        ((AuthWindow) authView).getWorkerButton().addActionListener(e -> authView.navigateToWorkerAuth());
         ((AuthWindow) authView).getExitButton().addActionListener(e -> System.exit(0));
 
         // Обработка кнопок RegisterWindow

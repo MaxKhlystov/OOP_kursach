@@ -121,10 +121,32 @@ public class WorkerAuthWindow extends JFrame implements WorkerAuthView {
 
     @Override
     public void navigateToMainWindow(String login, int userId) {
-        this.dispose();
+        this.setVisible(false);
         WorkerMainWindow workerMainWindow = new WorkerMainWindow(login);
         new WorkerMainWindowController(workerMainWindow);
         workerMainWindow.setVisible(true);
+    }
+
+    @Override
+    public void navigateToWorkerRegister() {
+        this.setVisible(false);
+        for (Window window : Window.getWindows()) {
+            if (window instanceof WorkerRegisterWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
+    }
+
+    @Override
+    public void navigateToUserAuth() {
+        this.setVisible(false);
+        for (Window window : Window.getWindows()) {
+            if (window instanceof AuthWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
     }
 
     @Override

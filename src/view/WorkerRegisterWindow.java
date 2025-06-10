@@ -116,6 +116,12 @@ public class WorkerRegisterWindow extends JFrame implements WorkerRegisterView {
     @Override
     public void navigateToWorkerAuth() {
         this.setVisible(false);
+        for (Window window : Window.getWindows()) {
+            if (window instanceof WorkerAuthWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
     }
 
     @Override

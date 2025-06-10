@@ -135,5 +135,11 @@ public class WorkerMainWindow extends JFrame implements WorkerMainView {
     @Override
     public void navigateToAuth() {
         this.dispose();
+        for (Window window : Window.getWindows()) {
+            if (window instanceof WorkerAuthWindow) {
+                window.setVisible(true); // Показываем существующее окно
+                return;
+            }
+        }
     }
 }
