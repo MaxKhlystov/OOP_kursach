@@ -106,7 +106,7 @@ public class MainWindow extends JFrame implements MainView {
     }
 
     @Override
-    public void showConfirmDeleteDialog(Car car) {
+    public boolean showConfirmDeleteDialog(Car car) {
         int result = JOptionPane.showConfirmDialog(
                 this,
                 "Вы уверены, что хотите удалить автомобиль " + car.getName() + "?",
@@ -116,6 +116,7 @@ public class MainWindow extends JFrame implements MainView {
         if (result == JOptionPane.YES_OPTION) {
             // Контроллер обработает это через listener
         }
+        return false;
     }
 
     @Override

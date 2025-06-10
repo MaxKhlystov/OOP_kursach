@@ -5,39 +5,53 @@ import model.Car;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class DatabaseManager {
-    private static final String DB_URL = "jdbc:sqlite:users.db";
+    private static final String DB_users_URL = "jdbc:sqlite:users.db";
+    private static final String DB_workers_URL = "jdbc:sqlite:workers.db";
+    private static final String DB_cars_URL = "jdbc:sqlite:cars.db";
 
     public DatabaseManager() {
         System.out.println("Попытка подключения к базе данных...");
-        createDatabase();
+        createDatabaseUsers();
+        createdatabaseCars();
+        createDatabaseWorkers();
     }
 
-    private void createDatabase() {
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+    private void createDatabaseUsers() {
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
              Statement stmt = conn.createStatement()) {
-
-            // Таблица users
             String sqlUsers = "CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT UNIQUE NOT NULL," +
                     "password TEXT NOT NULL)";
             stmt.execute(sqlUsers);
-
-            // Таблица workers
+            System.out.println("Таблицы успешно созданы/проверены");
+        } catch (SQLException e) {
+            System.err.println("Ошибка при создании таблиц:");
+            e.printStackTrace();
+        }
+    }
+    private void createDatabaseWorkers(){
+        try (Connection conn = DriverManager.getConnection(DB_workers_URL);
+             Statement stmt = conn.createStatement()) {
             String sqlWorkers = "CREATE TABLE IF NOT EXISTS workers (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT UNIQUE NOT NULL," +
                     "password TEXT NOT NULL," +
                     "access_key TEXT NOT NULL)";
             stmt.execute(sqlWorkers);
-
-            // Таблица cars с problem_description
-            String sqlCars = "CREATE TABLE IF NOT EXISTS cars (" +
+            System.out.println("Таблицы успешно созданы/проверены");
+        } catch (SQLException e) {
+            System.err.println("Ошибка при создании таблиц:");
+            e.printStackTrace();
+        }
+    }
+    private void createdatabaseCars(){
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             Statement stmt = conn.createStatement()) {
+             String sqlCars = "CREATE TABLE IF NOT EXISTS cars (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "name TEXT NOT NULL," +
                     "vin TEXT NOT NULL UNIQUE," +
@@ -46,8 +60,7 @@ public class DatabaseManager {
                     "problem_description TEXT," +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                     "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE)";
-            stmt.execute(sqlCars);
-
+             stmt.execute(sqlCars);
             System.out.println("Таблицы успешно созданы/проверены");
         } catch (SQLException e) {
             System.err.println("Ошибка при создании таблиц:");
@@ -59,7 +72,7 @@ public class DatabaseManager {
         String sql = "INSERT INTO users(login, password) VALUES(?, ?)";
         System.out.println("Попытка регистрации пользователя: " + login);
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, login);
             pstmt.setString(2, password);
@@ -81,7 +94,7 @@ public class DatabaseManager {
         String sql = "SELECT password FROM users WHERE login = ?";
         System.out.println("Попытка входа пользователя: " + login);
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, login);
             ResultSet rs = pstmt.executeQuery();
@@ -108,7 +121,7 @@ public class DatabaseManager {
         }
 
         String sql = "INSERT INTO workers(login, password, access_key) VALUES(?, ?, ?)";
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_workers_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, login);
             pstmt.setString(2, password);
@@ -123,7 +136,7 @@ public class DatabaseManager {
 
     public boolean validateWorker(String login, String password, String key) {
         String sql = "SELECT password, access_key FROM workers WHERE login = ?";
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_workers_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, login);
             ResultSet rs = pstmt.executeQuery();
@@ -141,7 +154,7 @@ public class DatabaseManager {
     public static Car addCar(Car car) {
         String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description) VALUES(?, ?, ?, ?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, car.getName());
@@ -181,7 +194,7 @@ public class DatabaseManager {
         List<Car> cars = new ArrayList<>();
         String sql = "SELECT id, name, vin, license_plate, created_at, problem_description FROM cars WHERE owner_id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, ownerId);
@@ -211,7 +224,7 @@ public class DatabaseManager {
     public static boolean deleteCar(int carId, int ownerId) {
         String sql = "DELETE FROM cars WHERE id = ? AND owner_id = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, carId);
@@ -228,7 +241,7 @@ public class DatabaseManager {
     public int getUserId(String login) {
         String sql = "SELECT id FROM users WHERE login = ?";
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, login);

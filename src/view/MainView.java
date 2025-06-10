@@ -2,7 +2,7 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
+
 import model.Car;
 
 public interface MainView {
@@ -18,7 +18,7 @@ public interface MainView {
     // Диалоговые окна
     void showAddCarDialog();
     void showCarDetailsDialog(Car car);
-    void showConfirmDeleteDialog(Car car);
+    boolean showConfirmDeleteDialog(Car car);
     void showError(String message);
     void showMessage(String message);
 

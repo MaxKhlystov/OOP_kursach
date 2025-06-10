@@ -16,7 +16,4 @@ public class WindowFactory {
     public static WorkerRegisterView createWorkerRegisterView() {
         return new WorkerRegisterWindow();
     }
-    public static MainView createMainView() {
-        return new MainWindow();
-    }
 }

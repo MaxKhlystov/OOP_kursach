@@ -3,6 +3,8 @@ package controllers;
 import repository.DatabaseManager;
 import view.*;
 
+import javax.swing.*;
+
 public class AuthController {
     private final AuthView authView;
     private final RegisterView registerView;
@@ -24,23 +26,41 @@ public class AuthController {
     private void initControllers() {
         // Обработка кнопок AuthWindow
         ((AuthWindow) authView).getLoginButton().addActionListener(e -> handleLogin());
-        ((AuthWindow) authView).getRegisterButton().addActionListener(e -> authView.navigateToRegister());
-        ((AuthWindow) authView).getWorkerButton().addActionListener(e -> authView.navigateToWorkerAuth());
+        ((AuthWindow) authView).getRegisterButton().addActionListener(e ->{
+            ((JFrame) authView).setVisible(false);
+            ((JFrame) registerView).setVisible(true);
+        });
+        ((AuthWindow) authView).getWorkerButton().addActionListener(e ->{
+            ((JFrame) authView).setVisible(false);
+            ((JFrame) workerAuthView).setVisible(true);
+        });
         ((AuthWindow) authView).getExitButton().addActionListener(e -> System.exit(0));
 
         // Обработка кнопок RegisterWindow
         ((RegisterWindow) registerView).getRegisterButton().addActionListener(e -> handleRegistration());
-        ((RegisterWindow) registerView).getBackButton().addActionListener(e -> registerView.navigateToAuth());
+        ((RegisterWindow) registerView).getBackButton().addActionListener(e -> {
+            ((JFrame) registerView).setVisible(false);
+            ((JFrame) authView).setVisible(true);
+        });
 
         // Обработка кнопок WorkerAuthWindow
         ((WorkerAuthWindow) workerAuthView).getLoginButton().addActionListener(e -> handleWorkerLogin());
-        ((WorkerAuthWindow) workerAuthView).getRegisterButton().addActionListener(e -> workerAuthView.navigateToWorkerRegister());
-        ((WorkerAuthWindow) workerAuthView).getBackButton().addActionListener(e -> workerAuthView.navigateToAuth());
+        ((WorkerAuthWindow) workerAuthView).getRegisterButton().addActionListener(e -> {
+            ((JFrame) workerAuthView).setVisible(false);
+            ((JFrame) workerRegisterView).setVisible(true);
+        });
+        ((WorkerAuthWindow) workerAuthView).getBackButton().addActionListener(e -> {
+            ((JFrame) workerAuthView).setVisible(false);
+            ((JFrame) authView).setVisible(true);
+        });
         ((WorkerAuthWindow) workerAuthView).getExitButton().addActionListener(e -> System.exit(0));
 
         // Обработка кнопок WorkerRegisterWindow
         ((WorkerRegisterWindow) workerRegisterView).getRegisterButton().addActionListener(e -> handleWorkerRegistration());
-        ((WorkerRegisterWindow) workerRegisterView).getBackButton().addActionListener(e -> workerRegisterView.navigateToWorkerAuth());
+        ((WorkerRegisterWindow) workerRegisterView).getBackButton().addActionListener(e -> {
+            ((JFrame) workerRegisterView).setVisible(false);
+            ((JFrame) workerAuthView).setVisible(true);
+        });
     }
 
     private void handleLogin() {
@@ -76,11 +96,13 @@ public class AuthController {
 
         if (databaseManager.registerUser(login, password)) {
             registerView.showSuccess("Регистрация успешна!");
-            registerView.navigateToAuth();
+            ((JFrame) authView).setVisible(true);
+            ((JFrame) registerView).setVisible(false);
         } else {
             registerView.showError("Ошибка регистрации. Проверьте логин и пароль.");
         }
     }
+
 
     private void handleWorkerLogin() {
         String login = workerAuthView.getLogin();
@@ -108,7 +130,8 @@ public class AuthController {
 
         if (databaseManager.registerWorker(login, password, key)) {
             workerRegisterView.showSuccess("Регистрация успешна!");
-            workerRegisterView.navigateToWorkerAuth();
+            ((JFrame) workerAuthView).setVisible(true);
+            ((JFrame) workerRegisterView).setVisible(false);
         } else {
             workerRegisterView.showError("Ошибка регистрации. Проверьте логин, пароль и ключ доступа.");
         }

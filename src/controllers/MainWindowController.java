@@ -11,7 +11,6 @@ import java.util.List;
 
 public class MainWindowController {
     private final MainView view;
-    private final AuthView authView;
     private final DatabaseManager databaseManager;
     private final String username;
     private final int userId;
@@ -51,7 +50,6 @@ public class MainWindowController {
                 view.addToMainPanel(carCard);
             }
         }
-
         view.updateUI();
     }
 
@@ -95,7 +93,6 @@ public class MainWindowController {
         card.add(Box.createVerticalGlue());
         card.add(buttonPanel);
 
-        // Установка обработчиков через view
         view.setShowDetailsListener(car, e -> showCarDetails(car));
         view.setDeleteCarListener(car, e -> deleteCar(car));
 
@@ -104,9 +101,6 @@ public class MainWindowController {
 
     private void handleAddCar(ActionEvent e) {
         view.showAddCarDialog();
-
-        // В реальной реализации это будет обрабатываться через callback из диалога
-        // Здесь просто пример обработки
         Car newCar = new Car("Новый автомобиль", "VIN123", "A123BC", userId, "Проблема");
         if (databaseManager.addCar(newCar) != null) {
             view.showMessage("Автомобиль добавлен на ремонт!");
@@ -133,6 +127,5 @@ public class MainWindowController {
 
     private void handleLogout() {
         view.close();
-        authView.navigateToAuth();
     }
 }
