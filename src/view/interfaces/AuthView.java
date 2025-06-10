@@ -1,4 +1,4 @@
-package view;
+package view.interfaces;
 
 public interface AuthView {
     String getLogin();

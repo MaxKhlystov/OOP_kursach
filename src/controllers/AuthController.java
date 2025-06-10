@@ -2,6 +2,10 @@ package controllers;
 
 import repository.DatabaseManager;
 import view.*;
+import view.interfaces.AuthView;
+import view.interfaces.RegisterView;
+import view.interfaces.WorkerAuthView;
+import view.interfaces.WorkerRegisterView;
 
 import javax.swing.*;
 

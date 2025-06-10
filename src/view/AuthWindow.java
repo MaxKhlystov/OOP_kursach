@@ -1,6 +1,7 @@
 package view;
 
-import controllers.MainWindowController;
+import controllers.UserMainWindowController;
+import view.interfaces.AuthView;
 
 import javax.swing.*;
 import java.awt.*;
@@ -118,8 +119,8 @@ public class AuthWindow extends JFrame implements AuthView {
     @Override
     public void navigateToMainWindow(String login, int userId) {
         this.dispose();
-        MainWindow mainWindow = new MainWindow(login, userId);
-        new MainWindowController(mainWindow, login, userId);
+        UserMainWindow mainWindow = new UserMainWindow(login, userId);
+        new UserMainWindowController(mainWindow, login, userId);
         mainWindow.setVisible(true);
     }
 

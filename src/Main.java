@@ -1,6 +1,7 @@
 import controllers.AuthController;
 import repository.DatabaseManager;
 import view.*;
+import view.interfaces.*;
 
 import javax.swing.*;
 
@@ -12,8 +13,13 @@ public class Main {
         RegisterView registerView = WindowFactory.createRegisterView();
         WorkerAuthView workerAuthView = WindowFactory.createWorkerAuthView();
         WorkerRegisterView workerRegisterView = WindowFactory.createWorkerRegisterView();
-
-        new AuthController(authView, registerView, workerAuthView, workerRegisterView, dbManager);
+        new AuthController(
+                authView,
+                registerView,
+                workerAuthView,
+                workerRegisterView,
+                dbManager
+        );
 
         ((JFrame) authView).setVisible(true);
     }

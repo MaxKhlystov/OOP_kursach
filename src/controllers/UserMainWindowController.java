@@ -2,20 +2,20 @@ package controllers;
 
 import model.Car;
 import repository.DatabaseManager;
-import view.*;
+import view.interfaces.UserMainView;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-public class MainWindowController {
-    private final MainView view;
+public class UserMainWindowController {
+    private final UserMainView view;
     private final DatabaseManager databaseManager;
     private final String username;
     private final int userId;
 
-    public MainWindowController(MainView view, String username, int userId) {
+    public UserMainWindowController(UserMainView view, String username, int userId) {
         this.view = view;
         this.databaseManager = new DatabaseManager(); // Инициализация здесь или через DI
         this.username = username;

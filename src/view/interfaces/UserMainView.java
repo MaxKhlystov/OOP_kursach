@@ -1,11 +1,11 @@
-package view;
+package view.interfaces;
 
 import javax.swing.*;
 import java.awt.*;
 
 import model.Car;
 
-public interface MainView {
+public interface UserMainView {
     // Управление данными
     void setUsername(String username);
     void setUserId(int userId);

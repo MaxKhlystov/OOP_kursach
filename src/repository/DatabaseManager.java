@@ -220,6 +220,31 @@ public class DatabaseManager {
 
         return cars;
     }
+    public List<Car> getAllCars() {
+        List<Car> cars = new ArrayList<>();
+        String sql = "SELECT * FROM cars";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Car car = new Car(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("vin"),
+                        rs.getString("license_plate"),
+                        rs.getInt("owner_id"),
+                        rs.getTimestamp("created_at").toLocalDateTime(),
+                        rs.getString("problem_description")
+                );
+                cars.add(car);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return cars;
+    }
 
     public static boolean deleteCar(int carId, int ownerId) {
         String sql = "DELETE FROM cars WHERE id = ? AND owner_id = ?";

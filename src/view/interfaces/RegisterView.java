@@ -1,12 +1,11 @@
-package view;
+package view.interfaces;
 
-public interface WorkerRegisterView {
+public interface RegisterView {
     String getLogin();
     String getPassword();
     String getConfirmPassword();
-    String getKey();
     void showError(String message);
     void showSuccess(String message);
-    void navigateToWorkerAuth();
+    void navigateToAuth();
     void close();
 }

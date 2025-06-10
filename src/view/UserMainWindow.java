@@ -3,15 +3,16 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 import model.Car;
+import view.interfaces.UserMainView;
 
-public class MainWindow extends JFrame implements MainView {
+public class UserMainWindow extends JFrame implements UserMainView {
     private String username;
     private int userId;
     private JPanel mainPanel;
     private JButton addCarButton;
     private JButton logoutButton;
 
-    public MainWindow(String username, int userId) {
+    public UserMainWindow(String username, int userId) {
         super("Главное окно");
         this.username = username;
         this.userId = userId;

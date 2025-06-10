@@ -1,5 +1,7 @@
 package view;
 
+import view.interfaces.RegisterView;
+
 import javax.swing.*;
 import java.awt.*;
 

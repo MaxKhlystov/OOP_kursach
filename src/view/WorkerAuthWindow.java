@@ -1,6 +1,7 @@
 package view;
 
-import controllers.MainWindowController;
+import controllers.WorkerMainWindowController;
+import view.interfaces.WorkerAuthView;
 
 import javax.swing.*;
 import java.awt.*;
@@ -121,19 +122,9 @@ public class WorkerAuthWindow extends JFrame implements WorkerAuthView {
     @Override
     public void navigateToMainWindow(String login, int userId) {
         this.dispose();
-        MainWindow mainWindow = new MainWindow(login, userId);
-        new MainWindowController(mainWindow, login, userId);
-        mainWindow.setVisible(true);
-    }
-
-    @Override
-    public void navigateToWorkerRegister() {
-        this.setVisible(false);
-    }
-
-    @Override
-    public void navigateToAuth() {
-        this.setVisible(false);
+        WorkerMainWindow workerMainWindow = new WorkerMainWindow(login);
+        new WorkerMainWindowController(workerMainWindow);
+        workerMainWindow.setVisible(true);
     }
 
     @Override

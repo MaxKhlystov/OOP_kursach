@@ -1,4 +1,4 @@
-package view;
+package view.interfaces;
 
 public interface WorkerAuthView {
     String getLogin();
@@ -6,7 +6,5 @@ public interface WorkerAuthView {
     String getKey();
     void showError(String message);
     void navigateToMainWindow(String login, int userId);
-    void navigateToWorkerRegister();
-    void navigateToAuth();
     void close();
 }
