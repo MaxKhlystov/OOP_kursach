@@ -36,11 +36,7 @@ public class UserMainWindow extends JFrame implements UserMainView {
     private void initComponents() {
         setLayout(new BorderLayout());
 
-        // Top panel
         JPanel topPanel = new JPanel(new BorderLayout());
-        JLabel welcomeLabel = new JLabel("Добро пожаловать, " + username + "!", SwingConstants.CENTER);
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        topPanel.add(welcomeLabel, BorderLayout.CENTER);
 
         logoutButton = new JButton("Выйти");
         topPanel.add(logoutButton, BorderLayout.EAST);

@@ -60,7 +60,7 @@ public class UserMainWindowController {
                 BorderFactory.createLineBorder(Color.GRAY),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        card.setPreferredSize(new Dimension(220, 150));
+        card.setPreferredSize(new Dimension(150, 150));
 
         JLabel nameLabel = new JLabel(car.getName());
         JLabel plateLabel = new JLabel(car.getLicensePlate());
