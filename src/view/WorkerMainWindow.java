@@ -135,6 +135,5 @@ public class WorkerMainWindow extends JFrame implements WorkerMainView {
     @Override
     public void navigateToAuth() {
         this.dispose();
-        // Здесь должна быть логика возврата к окну авторизации
     }
 }

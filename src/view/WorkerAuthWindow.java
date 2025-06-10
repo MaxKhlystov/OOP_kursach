@@ -132,7 +132,6 @@ public class WorkerAuthWindow extends JFrame implements WorkerAuthView {
         this.dispose();
     }
 
-    // Геттеры для кнопок
     public JButton getLoginButton() { return loginButton; }
     public JButton getRegisterButton() { return registerButton; }
     public JButton getBackButton() { return backButton; }

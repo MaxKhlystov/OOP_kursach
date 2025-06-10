@@ -5,7 +5,6 @@ import javax.swing.*;
 import java.util.List;
 
 public interface WorkerMainView {
-    // Управление данными
     void setUsername(String username);
 
     // Управление UI
@@ -22,7 +21,6 @@ public interface WorkerMainView {
     void close();
     void navigateToAuth();
 
-    // Колбэки для контроллера
     void setLogoutListener(java.awt.event.ActionListener listener);
     void setStatusChangeListener(java.awt.event.ActionListener listener);
     void setRefreshListener(java.awt.event.ActionListener listener);

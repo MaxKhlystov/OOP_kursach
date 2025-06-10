@@ -126,6 +126,26 @@ public class UserMainWindowController {
     }
 
     private void handleLogout() {
-        view.close();
+        String[] options = {"Выйти из аккаунта", "Выйти из приложения", "Отмена"};
+        int choice = JOptionPane.showOptionDialog(
+                (Component) view,
+                "Выберите действие:",
+                "Подтверждение выхода",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        switch (choice) {
+            case 0:
+                view.close();
+                view.navigateToAuth();
+                break;
+            case 1:
+                System.exit(0);
+                break;
+        }
     }
 }
