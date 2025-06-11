@@ -35,7 +35,10 @@ public class UserMainWindowController {
         } else {
             for (Car car : userCars) {
                 view.addCarCard(car,
-                        e -> showCarDetails(car),
+                        e -> {
+                            System.out.println("Путь к изображению: " + car.getImagePath()); // ✅ лог
+                            view.showCarDetailsDialog(car); // показываем диалог
+                        },
                         e -> handleEditCar(car),
                         e -> handleDeleteCar(car));
             }
@@ -49,7 +52,7 @@ public class UserMainWindowController {
                 return false;
             }
             if (imagePath == null || imagePath.isEmpty()) {
-                imagePath = "default.jpg"; // Только имя файла
+                imagePath = "default.png"; // Только имя файла
             }
             Car newCar = new Car(name, vin, plate, userId, problem, imagePath);
             boolean success = databaseManager.addCar(newCar) != null;
@@ -59,7 +62,6 @@ public class UserMainWindowController {
             return success;
         });
     }
-
 
     private void handleEditCar(Car car) {
         view.showEditCarDialog(car, (name, vin, plate, problem, imagePath) -> {

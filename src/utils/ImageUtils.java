@@ -4,29 +4,29 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 
 public class ImageUtils {
-    private static final String MEDIA_PATH = "resource";
+    private static final String MEDIA_PATH = "media";
 
     public static String saveImage(BufferedImage image, String fileName) throws IOException {
         File mediaDir = new File(MEDIA_PATH);
         if (!mediaDir.exists()) {
-            mediaDir.mkdirs();
+            boolean created = mediaDir.mkdirs();
+            if (!created) {
+                throw new IOException("Не удалось создать папку: " + MEDIA_PATH);
+            }
         }
 
-        String filePath = MEDIA_PATH + File.separator + fileName;
-        File outputFile = new File(filePath);
+        File outputFile = new File(mediaDir, fileName);
         ImageIO.write(image, "jpg", outputFile);
-        return fileName; // Возвращаем только имя файла
+        return outputFile.getAbsolutePath();
     }
 
     public static BufferedImage loadImage(String fileName) throws IOException {
-        InputStream is = ImageUtils.class.getClassLoader().getResourceAsStream(fileName);
-        if (is == null) {
-            throw new IOException("Изображение media/" + fileName + " не найдено");
+        File imageFile = new File(MEDIA_PATH, fileName);
+        if (!imageFile.exists()) {
+            throw new IOException("Файл не найден: " + imageFile.getAbsolutePath());
         }
-        return ImageIO.read(is);
+        return ImageIO.read(imageFile);
     }
-
 }

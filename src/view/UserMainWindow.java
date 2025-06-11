@@ -56,35 +56,63 @@ public class UserMainWindow extends JFrame implements UserMainView {
     @Override
     public void clearMainPanel() {
         mainPanel.removeAll();
+        mainPanel.revalidate();
+        mainPanel.repaint();
         updateUI();
     }
 
     @Override
     public void addCarCard(Car car, ActionListener detailsAction, ActionListener editAction, ActionListener deleteAction) {
         JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setLayout(new BorderLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CARD_BORDER_COLOR, CARD_BORDER_THICKNESS),
+                BorderFactory.createLineBorder(CARD_BORDER_COLOR, CARD_BORDER_THICKNESS, true),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        Dimension maxSize = new Dimension(200, 250);
-        card.setMaximumSize(maxSize);
+        card.setMaximumSize(new Dimension(500, 160));
+        card.setBackground(new Color(245, 245, 245));
 
-        // Загрузка и отображение изображения
+        // Левая часть: изображение
         JLabel imageLabel = new JLabel();
+        imageLabel.setPreferredSize(new Dimension(150, 100));
+        imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
         try {
             BufferedImage image = ImageUtils.loadImage(car.getImagePath());
-            ImageIcon icon = new ImageIcon(image.getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+            ImageIcon icon;
+            if (image != null) {
+                icon = new ImageIcon(image.getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+            } else {
+                icon = new ImageIcon();
+            }
             imageLabel.setIcon(icon);
         } catch (IOException e) {
-            imageLabel.setText("Нет изображения");
+            imageLabel.setText("Ошибка загрузки изображения");
         }
 
-        JLabel nameLabel = new JLabel(car.getName());
-        JLabel vinLabel = new JLabel("VIN: " + car.getVin());
-        JLabel plateLabel = new JLabel("Гос. номер: " + car.getLicensePlate());
+        // Центр: Информация
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBackground(card.getBackground());
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        JLabel nameLabel = new JLabel(car.getName());
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 30));
+        JLabel vinLabel = new JLabel("VIN: " + car.getVin());
+        vinLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        JLabel plateLabel = new JLabel("Гос. номер: " + car.getLicensePlate());
+        plateLabel.setFont(new Font("Arial", Font.BOLD, 20));
+
+        infoPanel.add(nameLabel);
+        infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(vinLabel);
+        infoPanel.add(plateLabel);
+
+        // Правая часть: Кнопки
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+        buttonPanel.setBackground(card.getBackground());
+
         JButton detailsBtn = new JButton("Подробнее");
         JButton editBtn = new JButton("Изменить");
         JButton deleteBtn = new JButton("Удалить");
@@ -93,23 +121,28 @@ public class UserMainWindow extends JFrame implements UserMainView {
         editBtn.addActionListener(editAction);
         deleteBtn.addActionListener(deleteAction);
 
+        detailsBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        editBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        deleteBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         buttonPanel.add(detailsBtn);
+        buttonPanel.add(Box.createVerticalStrut(5));
         buttonPanel.add(editBtn);
+        buttonPanel.add(Box.createVerticalStrut(5));
         buttonPanel.add(deleteBtn);
 
-        card.add(imageLabel);
-        card.add(nameLabel);
-        card.add(vinLabel);
-        card.add(plateLabel);
-        card.add(buttonPanel);
+        card.add(imageLabel, BorderLayout.WEST);
+        card.add(infoPanel, BorderLayout.CENTER);
+        card.add(buttonPanel, BorderLayout.EAST);
 
+        mainPanel.add(Box.createVerticalStrut(10)); // отступ между карточками
         mainPanel.add(card);
         updateUI();
     }
 
     @Override
     public void showNoCarsMessage() {
-        JLabel noCarsLabel = new JLabel("У вас нет автомобилей в ремонте");
+        JLabel noCarsLabel = new JLabel("У вас нет автомобилей");
         noCarsLabel.setFont(new Font("Arial", Font.ITALIC, 16));
         noCarsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         mainPanel.add(noCarsLabel);
@@ -167,7 +200,7 @@ public class UserMainWindow extends JFrame implements UserMainView {
             String imagePath = null;
             if (uploadedImage[0] != null) {
                 try {
-                    String fileName = "car_" + System.currentTimeMillis() + ".jpg";
+                    String fileName = "default.png";
                     imagePath = ImageUtils.saveImage(uploadedImage[0], fileName);
                 } catch (IOException ex) {
                     showError("Ошибка при сохранении изображения");
@@ -189,14 +222,25 @@ public class UserMainWindow extends JFrame implements UserMainView {
 
     @Override
     public void showEditCarDialog(Car car, CarDialogCallback callback) {
+        JDialog dialog = new JDialog(this, "Редактировать автомобиль", true);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
         JTextField nameField = new JTextField(car.getName());
         JTextField vinField = new JTextField(car.getVin());
         JTextField plateField = new JTextField(car.getLicensePlate());
         JTextArea problemArea = new JTextArea(car.getProblemDescription(), 3, 20);
 
-        // Компоненты для работы с изображением
         JLabel imageLabel = new JLabel();
+        imageLabel.setPreferredSize(new Dimension(150, 100));
+        imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        imageLabel.setVerticalAlignment(SwingConstants.CENTER);
+
         JButton uploadBtn = new JButton("Изменить фото");
+
         BufferedImage[] currentImage = {null};
         String[] newImagePath = {null};
 
@@ -207,56 +251,91 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
                 imageLabel.setIcon(icon);
                 imageLabel.setText("");
+                System.out.println(car.getImagePath());
             } else {
-                currentImage[0] = ImageUtils.loadImage("default.jpg");
+                currentImage[0] = ImageUtils.loadImage("default.png");
                 ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
                 imageLabel.setIcon(icon);
-                imageLabel.setText("(используется заглушка)");
+                imageLabel.setText("");
             }
         } catch (IOException ex) {
             imageLabel.setText("Ошибка загрузки изображения");
         }
 
+        JLabel fileNameLabel = new JLabel("Файл не выбран");
+        fileNameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+
         uploadBtn.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
-            int returnValue = fileChooser.showOpenDialog(null);
+            int returnValue = fileChooser.showOpenDialog(dialog);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
-                try {
-                    currentImage[0] = ImageIO.read(fileChooser.getSelectedFile());
-                    ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
-                    imageLabel.setIcon(icon);
-                    imageLabel.setText("Новое фото: " + fileChooser.getSelectedFile().getName());
+                File selectedFile = fileChooser.getSelectedFile();
 
-                    // Сохраняем временный путь к новому изображению
-                    String fileName = "car_" + System.currentTimeMillis() + ".jpg";
-                    newImagePath[0] = ImageUtils.saveImage(currentImage[0], fileName);
+                try {
+                    BufferedImage img = ImageIO.read(selectedFile);
+                    if (img != null) {
+                        currentImage[0] = img;
+                        ImageIcon icon = new ImageIcon(img.getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+                        imageLabel.setIcon(icon);
+                        imageLabel.setText("");
+                        fileNameLabel.setText(selectedFile.getName());
+                        String fileName = "car_" + System.currentTimeMillis() + ".jpg";
+                        newImagePath[0] = ImageUtils.saveImage(img, fileName);
+                        dialog.pack();
+                        dialog.setLocationRelativeTo(this);
+                    } else {
+                        showError("Выбранный файл не является корректным изображением");
+                    }
                 } catch (IOException ex) {
                     showError("Ошибка при загрузке изображения");
-                }finally {
-                    fileChooser.setVisible(false);
                 }
             }
         });
 
-        Object[] message = {
-                "Название:", nameField,
-                "VIN:", vinField,
-                "Гос. номер:", plateField,
-                "Описание проблемы:", new JScrollPane(problemArea),
-                "Текущее фото:", imageLabel,
-                uploadBtn
-        };
+        // Добавляем компоненты в contentPanel с метками
+        contentPanel.add(new JLabel("Название:"));
+        contentPanel.add(nameField);
+        contentPanel.add(Box.createVerticalStrut(5));
+        contentPanel.add(new JLabel("VIN:"));
+        contentPanel.add(vinField);
+        contentPanel.add(Box.createVerticalStrut(5));
+        contentPanel.add(new JLabel("Гос. номер:"));
+        contentPanel.add(plateField);
+        contentPanel.add(Box.createVerticalStrut(5));
+        contentPanel.add(new JLabel("Описание проблемы:"));
+        contentPanel.add(new JScrollPane(problemArea));
+        contentPanel.add(Box.createVerticalStrut(10));
 
-        int option = JOptionPane.showConfirmDialog(
-                this,
-                message,
-                "Редактировать автомобиль",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
+        contentPanel.add(new JLabel("Фото:"));
+        JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        imagePanel.add(imageLabel);
+        contentPanel.add(imagePanel);
 
-        if (option == JOptionPane.OK_OPTION) {
+        contentPanel.add(Box.createVerticalStrut(5));
+
+        // Панель для кнопки загрузки и имени файла рядом
+        JPanel filePanel = new JPanel();
+        filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.X_AXIS));
+        filePanel.add(uploadBtn);
+        filePanel.add(fileNameLabel);
+        filePanel.add(Box.createHorizontalGlue());
+
+        contentPanel.add(filePanel);
+
+        dialog.add(contentPanel, BorderLayout.CENTER);
+
+        // Кнопки OK и Cancel с одинаковым размером
+        JPanel buttonPanel = new JPanel();
+        JButton okBtn = new JButton("OK");
+        JButton cancelBtn = new JButton("Отмена");
+
+        Dimension buttonSize = new Dimension(80, 30);
+        okBtn.setPreferredSize(buttonSize);
+        cancelBtn.setPreferredSize(buttonSize);
+
+        okBtn.addActionListener(ev -> {
             String finalImagePath = (newImagePath[0] != null) ? newImagePath[0] : car.getImagePath();
-
+            car.setImagePath(finalImagePath);
             boolean success = callback.processInput(
                     nameField.getText(),
                     vinField.getText(),
@@ -266,8 +345,20 @@ public class UserMainWindow extends JFrame implements UserMainView {
 
             if (success) {
                 showMessage("Автомобиль успешно обновлен");
+                dialog.dispose();
             }
-        }
+        });
+
+        cancelBtn.addActionListener(ev -> dialog.dispose());
+
+        buttonPanel.add(okBtn);
+        buttonPanel.add(cancelBtn);
+
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     @Override
@@ -277,7 +368,8 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 car.getName(),
                 car.getVin(),
                 car.getLicensePlate(),
-                car.getProblemDescription());
+                car.getProblemDescription(),
+                car.getImagePath());
 
         JOptionPane.showMessageDialog(
                 this,
