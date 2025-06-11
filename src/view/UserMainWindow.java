@@ -1,10 +1,15 @@
 package view;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 import model.Car;
+import utils.ImageUtils;
 import view.interfaces.UserMainView;
 
 public class UserMainWindow extends JFrame implements UserMainView {
@@ -62,8 +67,18 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 BorderFactory.createLineBorder(CARD_BORDER_COLOR, CARD_BORDER_THICKNESS),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        Dimension maxSize = new Dimension(200, 200);
+        Dimension maxSize = new Dimension(200, 250);
         card.setMaximumSize(maxSize);
+
+        // Загрузка и отображение изображения
+        JLabel imageLabel = new JLabel();
+        try {
+            BufferedImage image = ImageUtils.loadImage(car.getImagePath());
+            ImageIcon icon = new ImageIcon(image.getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+            imageLabel.setIcon(icon);
+        } catch (IOException e) {
+            imageLabel.setText("Нет изображения");
+        }
 
         JLabel nameLabel = new JLabel(car.getName());
         JLabel vinLabel = new JLabel("VIN: " + car.getVin());
@@ -82,6 +97,7 @@ public class UserMainWindow extends JFrame implements UserMainView {
         buttonPanel.add(editBtn);
         buttonPanel.add(deleteBtn);
 
+        card.add(imageLabel);
         card.add(nameLabel);
         card.add(vinLabel);
         card.add(plateLabel);
@@ -111,12 +127,33 @@ public class UserMainWindow extends JFrame implements UserMainView {
         JTextField vinField = new JTextField();
         JTextField plateField = new JTextField();
         JTextArea problemArea = new JTextArea(3, 20);
+        JLabel imageLabel = new JLabel("Фото не выбрано");
+        JButton uploadBtn = new JButton("Загрузить фото");
+
+        // Переменная для хранения загруженного изображения
+        BufferedImage[] uploadedImage = {null};
+
+        uploadBtn.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int returnValue = fileChooser.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                try {
+                    uploadedImage[0] = ImageIO.read(fileChooser.getSelectedFile());
+                    imageLabel.setText("Фото выбрано: " + fileChooser.getSelectedFile().getName());
+                } catch (IOException ex) {
+                    showError("Ошибка при загрузке изображения");
+                }finally {
+                    fileChooser.setVisible(false);
+                }
+            }
+        });
 
         Object[] message = {
                 "Название:", nameField,
                 "VIN:", vinField,
                 "Гос. номер:", plateField,
-                "Описание проблемы:", new JScrollPane(problemArea)
+                "Описание проблемы:", new JScrollPane(problemArea),
+                uploadBtn, imageLabel
         };
 
         int option = JOptionPane.showConfirmDialog(
@@ -127,11 +164,22 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 JOptionPane.PLAIN_MESSAGE);
 
         if (option == JOptionPane.OK_OPTION) {
+            String imagePath = null;
+            if (uploadedImage[0] != null) {
+                try {
+                    String fileName = "car_" + System.currentTimeMillis() + ".jpg";
+                    imagePath = ImageUtils.saveImage(uploadedImage[0], fileName);
+                } catch (IOException ex) {
+                    showError("Ошибка при сохранении изображения");
+                }
+            }
+
             boolean success = callback.processInput(
                     nameField.getText(),
                     vinField.getText(),
                     plateField.getText(),
-                    problemArea.getText());
+                    problemArea.getText(),
+                    imagePath); // Передаем путь к изображению
 
             if (success) {
                 showMessage("Автомобиль успешно добавлен");
@@ -146,11 +194,57 @@ public class UserMainWindow extends JFrame implements UserMainView {
         JTextField plateField = new JTextField(car.getLicensePlate());
         JTextArea problemArea = new JTextArea(car.getProblemDescription(), 3, 20);
 
+        // Компоненты для работы с изображением
+        JLabel imageLabel = new JLabel();
+        JButton uploadBtn = new JButton("Изменить фото");
+        BufferedImage[] currentImage = {null};
+        String[] newImagePath = {null};
+
+        // Загрузка текущего изображения
+        try {
+            if (car.getImagePath() != null && !car.getImagePath().isEmpty()) {
+                currentImage[0] = ImageIO.read(new File(car.getImagePath()));
+                ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+                imageLabel.setIcon(icon);
+                imageLabel.setText("");
+            } else {
+                currentImage[0] = ImageUtils.loadImage("default.jpg");
+                ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+                imageLabel.setIcon(icon);
+                imageLabel.setText("(используется заглушка)");
+            }
+        } catch (IOException ex) {
+            imageLabel.setText("Ошибка загрузки изображения");
+        }
+
+        uploadBtn.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int returnValue = fileChooser.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                try {
+                    currentImage[0] = ImageIO.read(fileChooser.getSelectedFile());
+                    ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+                    imageLabel.setIcon(icon);
+                    imageLabel.setText("Новое фото: " + fileChooser.getSelectedFile().getName());
+
+                    // Сохраняем временный путь к новому изображению
+                    String fileName = "car_" + System.currentTimeMillis() + ".jpg";
+                    newImagePath[0] = ImageUtils.saveImage(currentImage[0], fileName);
+                } catch (IOException ex) {
+                    showError("Ошибка при загрузке изображения");
+                }finally {
+                    fileChooser.setVisible(false);
+                }
+            }
+        });
+
         Object[] message = {
                 "Название:", nameField,
                 "VIN:", vinField,
                 "Гос. номер:", plateField,
-                "Описание проблемы:", new JScrollPane(problemArea)
+                "Описание проблемы:", new JScrollPane(problemArea),
+                "Текущее фото:", imageLabel,
+                uploadBtn
         };
 
         int option = JOptionPane.showConfirmDialog(
@@ -161,11 +255,14 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 JOptionPane.PLAIN_MESSAGE);
 
         if (option == JOptionPane.OK_OPTION) {
+            String finalImagePath = (newImagePath[0] != null) ? newImagePath[0] : car.getImagePath();
+
             boolean success = callback.processInput(
                     nameField.getText(),
                     vinField.getText(),
                     plateField.getText(),
-                    problemArea.getText());
+                    problemArea.getText(),
+                    finalImagePath);
 
             if (success) {
                 showMessage("Автомобиль успешно обновлен");
@@ -176,11 +273,10 @@ public class UserMainWindow extends JFrame implements UserMainView {
     @Override
     public void showCarDetailsDialog(Car car) {
         String message = String.format(
-                "Название: %s\nVIN: %s\nГос. номер: %s\nДата добавления: %s\nОписание проблемы:\n%s",
+                "Название: %s\nVIN: %s\nГос. номер: %s\nОписание проблемы:\n%s",
                 car.getName(),
                 car.getVin(),
                 car.getLicensePlate(),
-                car.getCreatedAt(),
                 car.getProblemDescription());
 
         JOptionPane.showMessageDialog(

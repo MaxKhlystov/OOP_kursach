@@ -15,7 +15,7 @@ public class DatabaseManager {
     public DatabaseManager() {
         System.out.println("Попытка подключения к базе данных...");
         createDatabaseUsers();
-        createdatabaseCars();
+        createDatabaseCars();
         createDatabaseWorkers();
     }
 
@@ -48,44 +48,25 @@ public class DatabaseManager {
             e.printStackTrace();
         }
     }
-    private void createdatabaseCars(){
+
+    private void createDatabaseCars() {
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              Statement stmt = conn.createStatement()) {
-             String sqlCars = "CREATE TABLE IF NOT EXISTS cars (" +
+            String sqlCars = "CREATE TABLE IF NOT EXISTS cars (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "name TEXT NOT NULL," +
                     "vin TEXT NOT NULL UNIQUE," +
                     "license_plate TEXT NOT NULL UNIQUE," +
                     "owner_id INTEGER NOT NULL," +
                     "problem_description TEXT," +
+                    "image_path TEXT," +  // Новое поле для хранения пути к изображению
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                     "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE)";
-             stmt.execute(sqlCars);
+            stmt.execute(sqlCars);
             System.out.println("Таблицы успешно созданы/проверены");
         } catch (SQLException e) {
             System.err.println("Ошибка при создании таблиц:");
             e.printStackTrace();
-        }
-    }
-
-    public boolean updateCar(Car car) {
-        String sql = "UPDATE cars SET name = ?, license_plate = ?, problem_description = ? WHERE id = ? AND owner_id = ?";
-
-        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, car.getName());
-            pstmt.setString(2, car.getLicensePlate());
-            pstmt.setString(3, car.getProblemDescription());
-            pstmt.setInt(4, car.getId());
-            pstmt.setInt(5, car.getOwnerId());
-
-            return pstmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Ошибка при обновлении автомобиля:");
-            e.printStackTrace();
-            return false;
         }
     }
 
@@ -172,8 +153,9 @@ public class DatabaseManager {
             return false;
         }
     }
-    public static Car addCar(Car car) {
-        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description) VALUES(?, ?, ?, ?, ?)";
+    public Car addCar(Car car) {
+        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path) " +
+                "VALUES(?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -183,6 +165,7 @@ public class DatabaseManager {
             pstmt.setString(3, car.getLicensePlate());
             pstmt.setInt(4, car.getOwnerId());
             pstmt.setString(5, car.getProblemDescription());
+            pstmt.setString(6, car.getImagePath());  // Добавляем путь к изображению
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
@@ -197,8 +180,8 @@ public class DatabaseManager {
                             car.getVin(),
                             car.getLicensePlate(),
                             car.getOwnerId(),
-                            LocalDateTime.now(),
-                            car.getProblemDescription()
+                            car.getProblemDescription(),
+                            car.getImagePath()  // Сохраняем путь к изображению
                     );
                 }
             }
@@ -211,9 +194,33 @@ public class DatabaseManager {
         }
     }
 
+    public boolean updateCar(Car car) {
+        String sql = "UPDATE cars SET name = ?, license_plate = ?, problem_description = ?, image_path = ? " +
+                "WHERE id = ? AND owner_id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, car.getName());
+            pstmt.setString(2, car.getLicensePlate());
+            pstmt.setString(3, car.getProblemDescription());
+            pstmt.setString(4, car.getImagePath());  // Обновляем путь к изображению
+            pstmt.setInt(5, car.getId());
+            pstmt.setInt(6, car.getOwnerId());
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при обновлении автомобиля:");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public static List<Car> getUserCars(int ownerId) {
         List<Car> cars = new ArrayList<>();
-        String sql = "SELECT id, name, vin, license_plate, created_at, problem_description FROM cars WHERE owner_id = ?";
+        String sql = "SELECT id, name, vin, license_plate, created_at, problem_description, image_path " +
+                "FROM cars WHERE owner_id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -228,8 +235,8 @@ public class DatabaseManager {
                         rs.getString("vin"),
                         rs.getString("license_plate"),
                         ownerId,
-                        rs.getTimestamp("created_at").toLocalDateTime(),
-                        rs.getString("problem_description")
+                        rs.getString("problem_description"),
+                        rs.getString("image_path")  // Получаем путь к изображению
                 );
                 cars.add(car);
             }
@@ -238,9 +245,9 @@ public class DatabaseManager {
             System.err.println("Ошибка при получении автомобилей:");
             e.printStackTrace();
         }
-
         return cars;
     }
+
     public List<Car> getAllCars() {
         List<Car> cars = new ArrayList<>();
         String sql = "SELECT * FROM cars";
@@ -256,8 +263,8 @@ public class DatabaseManager {
                         rs.getString("vin"),
                         rs.getString("license_plate"),
                         rs.getInt("owner_id"),
-                        rs.getTimestamp("created_at").toLocalDateTime(),
-                        rs.getString("problem_description")
+                        rs.getString("problem_description"),
+                        rs.getString("image_path")  // Получаем путь к изображению
                 );
                 cars.add(car);
             }

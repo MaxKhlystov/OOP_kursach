@@ -29,7 +29,7 @@ public interface UserMainView {
 
     @FunctionalInterface
     interface CarDialogCallback {
-        boolean processInput(String name, String vin, String plate, String problem);
+        boolean processInput(String name, String vin, String plate, String problem, String imagePath);
     }
 
     @FunctionalInterface

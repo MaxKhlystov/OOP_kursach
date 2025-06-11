@@ -43,13 +43,15 @@ public class UserMainWindowController {
     }
 
     private void handleAddCar(ActionEvent e) {
-        view.showAddCarDialog((name, vin, plate, problem) -> {
+        view.showAddCarDialog((name, vin, plate, problem, imagePath) -> {
             if (name.isEmpty() || vin.isEmpty() || plate.isEmpty()) {
                 view.showError("Все поля должны быть заполнены!");
                 return false;
             }
-
-            Car newCar = new Car(name, vin, plate, userId, problem);
+            if (imagePath == null || imagePath.isEmpty()) {
+                imagePath = "default.jpg"; // Только имя файла
+            }
+            Car newCar = new Car(name, vin, plate, userId, problem, imagePath);
             boolean success = databaseManager.addCar(newCar) != null;
             if (success) {
                 loadUserCars();
@@ -58,16 +60,20 @@ public class UserMainWindowController {
         });
     }
 
+
     private void handleEditCar(Car car) {
-        view.showEditCarDialog(car, (name, vin, plate, problem) -> {
-            if (name.isEmpty() || vin.isEmpty() || plate.isEmpty()) {
+        view.showEditCarDialog(car, (name, vin, plate, problem, imagePath) -> {
+            if (name.isEmpty() || vin.isEmpty() || plate.isEmpty() || problem.isEmpty()) {
                 view.showError("Все поля должны быть заполнены!");
                 return false;
             }
 
             car.setName(name);
+            car.setVin(vin);
             car.setLicensePlate(plate);
             car.setProblemDescription(problem);
+            car.setImagePath(imagePath); // Обновляем путь к изображению
+
             boolean success = databaseManager.updateCar(car);
             if (success) {
                 loadUserCars();
