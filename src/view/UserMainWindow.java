@@ -56,8 +56,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
     @Override
     public void clearMainPanel() {
         mainPanel.removeAll();
-        mainPanel.revalidate();
-        mainPanel.repaint();
         updateUI();
     }
 
@@ -200,8 +198,9 @@ public class UserMainWindow extends JFrame implements UserMainView {
             String imagePath = null;
             if (uploadedImage[0] != null) {
                 try {
-                    String fileName = "default.png";
-                    imagePath = ImageUtils.saveImage(uploadedImage[0], fileName);
+                    String fileName = "car_" + System.currentTimeMillis() + ".jpg";
+                    ImageUtils.saveImage(uploadedImage[0], fileName);
+                    imagePath = fileName;
                 } catch (IOException ex) {
                     showError("Ошибка при сохранении изображения");
                 }
@@ -240,51 +239,40 @@ public class UserMainWindow extends JFrame implements UserMainView {
         imageLabel.setVerticalAlignment(SwingConstants.CENTER);
 
         JButton uploadBtn = new JButton("Изменить фото");
-
         BufferedImage[] currentImage = {null};
         String[] newImagePath = {null};
 
         // Загрузка текущего изображения
         try {
-            if (car.getImagePath() != null && !car.getImagePath().isEmpty()) {
-                currentImage[0] = ImageIO.read(new File(car.getImagePath()));
-                ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
-                imageLabel.setIcon(icon);
-                imageLabel.setText("");
-                System.out.println(car.getImagePath());
+            String imagePath = (car.getImagePath() != null && !car.getImagePath().isEmpty()) ?
+                    car.getImagePath() : "default.png";
+            File imageFile = new File(ImageUtils.MEDIA_PATH + imagePath);
+            if (imageFile.exists()) {
+                currentImage[0] = ImageIO.read(imageFile);
             } else {
-                currentImage[0] = ImageUtils.loadImage("default.png");
-                ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
-                imageLabel.setIcon(icon);
-                imageLabel.setText("");
+                // Если файл не найден, используем дефолтное изображение
+                currentImage[0] = ImageIO.read(new File(ImageUtils.MEDIA_PATH + "default.png"));
             }
+            ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
+            imageLabel.setIcon(icon);
         } catch (IOException ex) {
             imageLabel.setText("Ошибка загрузки изображения");
         }
-
-        JLabel fileNameLabel = new JLabel("Файл не выбран");
-        fileNameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-
         uploadBtn.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             int returnValue = fileChooser.showOpenDialog(dialog);
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = fileChooser.getSelectedFile();
-
                 try {
                     BufferedImage img = ImageIO.read(selectedFile);
                     if (img != null) {
                         currentImage[0] = img;
                         ImageIcon icon = new ImageIcon(img.getScaledInstance(150, 100, Image.SCALE_SMOOTH));
                         imageLabel.setIcon(icon);
-                        imageLabel.setText("");
-                        fileNameLabel.setText(selectedFile.getName());
+                        // Генерируем уникальное имя файла
                         String fileName = "car_" + System.currentTimeMillis() + ".jpg";
-                        newImagePath[0] = ImageUtils.saveImage(img, fileName);
+                        newImagePath[0] = fileName;
                         dialog.pack();
-                        dialog.setLocationRelativeTo(this);
-                    } else {
-                        showError("Выбранный файл не является корректным изображением");
                     }
                 } catch (IOException ex) {
                     showError("Ошибка при загрузке изображения");
@@ -292,7 +280,7 @@ public class UserMainWindow extends JFrame implements UserMainView {
             }
         });
 
-        // Добавляем компоненты в contentPanel с метками
+        // Добавляем компоненты в contentPanel
         contentPanel.add(new JLabel("Название:"));
         contentPanel.add(nameField);
         contentPanel.add(Box.createVerticalStrut(5));
@@ -305,37 +293,38 @@ public class UserMainWindow extends JFrame implements UserMainView {
         contentPanel.add(new JLabel("Описание проблемы:"));
         contentPanel.add(new JScrollPane(problemArea));
         contentPanel.add(Box.createVerticalStrut(10));
-
         contentPanel.add(new JLabel("Фото:"));
+
         JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         imagePanel.add(imageLabel);
         contentPanel.add(imagePanel);
-
         contentPanel.add(Box.createVerticalStrut(5));
 
-        // Панель для кнопки загрузки и имени файла рядом
-        JPanel filePanel = new JPanel();
-        filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.X_AXIS));
+        JPanel filePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         filePanel.add(uploadBtn);
-        filePanel.add(fileNameLabel);
-        filePanel.add(Box.createHorizontalGlue());
-
         contentPanel.add(filePanel);
-
         dialog.add(contentPanel, BorderLayout.CENTER);
-
-        // Кнопки OK и Cancel с одинаковым размером
+        // Кнопки OK и Cancel
         JPanel buttonPanel = new JPanel();
         JButton okBtn = new JButton("OK");
         JButton cancelBtn = new JButton("Отмена");
 
-        Dimension buttonSize = new Dimension(80, 30);
-        okBtn.setPreferredSize(buttonSize);
-        cancelBtn.setPreferredSize(buttonSize);
-
         okBtn.addActionListener(ev -> {
-            String finalImagePath = (newImagePath[0] != null) ? newImagePath[0] : car.getImagePath();
-            car.setImagePath(finalImagePath);
+            String finalImagePath = newImagePath[0] != null ? newImagePath[0] : car.getImagePath();
+            if (finalImagePath == null || finalImagePath.isEmpty()) {
+                finalImagePath = "default.png";
+            }
+
+            // Сохраняем новое изображение, если оно было загружено
+            if (newImagePath[0] != null && currentImage[0] != null) {
+                try {
+                    ImageUtils.saveImage(currentImage[0], newImagePath[0]);
+                } catch (IOException ex) {
+                    showError("Ошибка при сохранении изображения");
+                    return;
+                }
+            }
+
             boolean success = callback.processInput(
                     nameField.getText(),
                     vinField.getText(),
@@ -350,10 +339,8 @@ public class UserMainWindow extends JFrame implements UserMainView {
         });
 
         cancelBtn.addActionListener(ev -> dialog.dispose());
-
         buttonPanel.add(okBtn);
         buttonPanel.add(cancelBtn);
-
         dialog.add(buttonPanel, BorderLayout.SOUTH);
 
         dialog.pack();

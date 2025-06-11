@@ -207,6 +207,7 @@ public class DatabaseManager {
             pstmt.setString(4, car.getImagePath());  // Обновляем путь к изображению
             pstmt.setInt(5, car.getId());
             pstmt.setInt(6, car.getOwnerId());
+            pstmt.executeUpdate();
 
             return pstmt.executeUpdate() > 0;
 

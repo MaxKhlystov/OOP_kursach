@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class ImageUtils {
-    private static final String MEDIA_PATH = "media";
+    public static final String MEDIA_PATH = "media/";
 
     public static String saveImage(BufferedImage image, String fileName) throws IOException {
         File mediaDir = new File(MEDIA_PATH);
