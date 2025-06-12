@@ -13,13 +13,11 @@ public class Car {
     private String imagePath;
     private String status; // Добавлено поле статуса
 
-    public Car(String name, String vin, String licensePlate, int ownerId,
-               String problemDescription, String imagePath, String status) {
+    public Car(String name, String vin, String licensePlate, int ownerId, String imagePath, String status) {
         this.name = name;
         this.vin = vin;
         this.licensePlate = licensePlate;
         this.ownerId = ownerId;
-        this.problemDescription = problemDescription;
         this.imagePath = imagePath;
         this.status = status;
     }

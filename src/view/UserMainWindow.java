@@ -199,7 +199,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 "Название:", nameField,
                 "VIN:", currentVinField,
                 "Гос. номер:", currentPlateField,
-                "Описание проблемы:", new JScrollPane(problemArea),
                 uploadBtn, imageLabel
         };
 
@@ -235,7 +234,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
                     nameField.getText(),
                     currentVinField.getText(),
                     currentPlateField.getText(),
-                    problemArea.getText(),
                     imagePath);
 
             if (success) {
@@ -358,7 +356,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
                     nameField.getText(),
                     vinField.getText(),
                     plateField.getText(),
-                    problemArea.getText(),
                     finalImagePath);
 
             if (success) {
@@ -380,11 +377,10 @@ public class UserMainWindow extends JFrame implements UserMainView {
     @Override
     public void showCarDetailsDialog(Car car) {
         String message = String.format(
-                "Название: %s\nVIN: %s\nГос. номер: %s\nОписание проблемы:\n%s",
+                "Название: %s\nVIN: %s\nГос. номер: %s",
                 car.getName(),
                 car.getVin(),
                 car.getLicensePlate(),
-                car.getProblemDescription(),
                 car.getImagePath());
 
         JOptionPane.showMessageDialog(

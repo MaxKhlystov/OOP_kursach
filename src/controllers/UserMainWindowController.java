@@ -106,7 +106,7 @@ public class UserMainWindowController {
             return;
         }
 
-        view.showAddCarDialog((name, vin, plate, problem, imagePath) -> {
+        view.showAddCarDialog((name, vin, plate, imagePath) -> {
             boolean hasError = false;
 
             view.highlightVinField(false);
@@ -139,7 +139,7 @@ public class UserMainWindowController {
             }
 
             // Статус по умолчанию "В ремонте"
-            Car newCar = new Car(name, vin, plate, userId, problem, imagePath, "В ремонте");
+            Car newCar = new Car(name, vin, plate, userId, imagePath, "В ремонте");
             boolean success = databaseManager.addCar(newCar) != null;
             if (success) {
                 loadUserCars();
@@ -149,8 +149,8 @@ public class UserMainWindowController {
     }
 
     private void handleEditCar(Car car) {
-        view.showEditCarDialog(car, (name, vin, plate, problem, imagePath) -> {
-            if (name.isEmpty() || vin.isEmpty() || plate.isEmpty() || problem.isEmpty()) {
+        view.showEditCarDialog(car, (name, vin, plate, imagePath) -> {
+            if (name.isEmpty() || vin.isEmpty() || plate.isEmpty()) {
                 view.showError("Все поля должны быть заполнены!");
                 return false;
             }
@@ -158,7 +158,6 @@ public class UserMainWindowController {
             car.setName(name);
             car.setVin(vin);
             car.setLicensePlate(plate);
-            car.setProblemDescription(problem);
             car.setImagePath(imagePath); // Обновляем путь к изображению
 
             boolean success = databaseManager.updateCar(car);
