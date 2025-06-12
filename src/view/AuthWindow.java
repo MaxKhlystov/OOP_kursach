@@ -120,7 +120,7 @@ public class AuthWindow extends JFrame implements AuthView {
     public void navigateToMainWindow(String login, int userId) {
         clearFields();
         this.setVisible(false);
-        UserMainWindow mainWindow = new UserMainWindow(login, userId);
+        UserMainWindow mainWindow = new UserMainWindow();
         new UserMainWindowController(mainWindow, login, userId);
         mainWindow.setVisible(true);
     }

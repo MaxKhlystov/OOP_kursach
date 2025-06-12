@@ -1,6 +1,7 @@
 package view.interfaces;
 
 import model.Car;
+import model.User;
 import java.awt.event.ActionListener;
 
 public interface UserMainView {
@@ -10,6 +11,8 @@ public interface UserMainView {
     void addCarCard(Car car, ActionListener detailsAction, ActionListener editAction, ActionListener deleteAction);
     void showNoCarsMessage();
     void updateUI();
+    void showNotification(String message, boolean isWarning);
+    void clearNotifications();
 
     // Диалоги
     void showAddCarDialog(CarDialogCallback callback);
@@ -17,6 +20,7 @@ public interface UserMainView {
     void showCarDetailsDialog(Car car);
     void showDeleteConfirmation(String carName, ConfirmationCallback callback);
     void showLogoutOptions(LogoutCallback callback);
+    void showProfileDialog(User user, ProfileCallback callback);
 
     void showError(String message);
     void showMessage(String message);
@@ -26,6 +30,10 @@ public interface UserMainView {
 
     void setAddCarListener(ActionListener listener);
     void setLogoutListener(ActionListener listener);
+    void setProfileListener(ActionListener listener);
+
+    void highlightVinField(boolean highlight);
+    void highlightLicensePlateField(boolean highlight);
 
     @FunctionalInterface
     interface CarDialogCallback {
@@ -40,5 +48,10 @@ public interface UserMainView {
     @FunctionalInterface
     interface LogoutCallback {
         void onChoice(int choice);
+    }
+
+    @FunctionalInterface
+    interface ProfileCallback {
+        boolean processProfileInput(String fullName, String phone);
     }
 }

@@ -1,9 +1,9 @@
 package repository;
 
 import model.Car;
+import model.User;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,17 +22,23 @@ public class DatabaseManager {
     private void createDatabaseUsers() {
         try (Connection conn = DriverManager.getConnection(DB_users_URL);
              Statement stmt = conn.createStatement()) {
+
             String sqlUsers = "CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT UNIQUE NOT NULL," +
-                    "password TEXT NOT NULL)";
+                    "password TEXT NOT NULL," +
+                    "full_name TEXT," +            // Добавлено
+                    "phone TEXT" +                 // Добавлено
+                    ")";
             stmt.execute(sqlUsers);
-            System.out.println("Таблицы успешно созданы/проверены");
+            System.out.println("Таблица users успешно создана/проверена");
+
         } catch (SQLException e) {
             System.err.println("Ошибка при создании таблиц:");
             e.printStackTrace();
         }
     }
+
     private void createDatabaseWorkers(){
         try (Connection conn = DriverManager.getConnection(DB_workers_URL);
              Statement stmt = conn.createStatement()) {
@@ -116,6 +122,74 @@ public class DatabaseManager {
             return false;
         }
     }
+
+    public User getUserByLogin(String login) {
+        String sql = "SELECT id, login, full_name, phone FROM users WHERE login = ?";
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, login);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return new User(
+                        rs.getInt("id"),
+                        rs.getString("login"),
+                        rs.getString("full_name"),
+                        rs.getString("phone")
+                );
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при получении данных пользователя:");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean updateUserProfile(int userId, String fullName, String phone) {
+        String sql = "UPDATE users SET full_name = ?, phone = ? WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, fullName);
+            pstmt.setString(2, phone);
+            pstmt.setInt(3, userId);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при обновлении профиля пользователя:");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public User getUserById(int userId) {
+        String sql = "SELECT id, login, full_name, phone FROM users WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return new User(
+                        rs.getInt("id"),
+                        rs.getString("login"),
+                        rs.getString("full_name"),
+                        rs.getString("phone")
+                );
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при получении данных пользователя:");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public boolean registerWorker(String login, String password, String key) {
         if (!key.equals("OOP")) {
             System.out.println("Неверный ключ доступа");
@@ -153,6 +227,7 @@ public class DatabaseManager {
             return false;
         }
     }
+
     public Car addCar(Car car) {
         String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path) " +
                 "VALUES(?, ?, ?, ?, ?, ?)";
@@ -292,6 +367,7 @@ public class DatabaseManager {
             return false;
         }
     }
+
     public int getUserId(String login) {
         String sql = "SELECT id FROM users WHERE login = ?";
 

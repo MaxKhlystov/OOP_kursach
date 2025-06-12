@@ -9,17 +9,22 @@ import java.io.File;
 import java.io.IOException;
 
 import model.Car;
+import model.User;
 import utils.ImageUtils;
 import view.interfaces.UserMainView;
 
 public class UserMainWindow extends JFrame implements UserMainView {
     private JPanel mainPanel;
+    private JPanel notificationPanel;
     private JMenuBar menuBar;
+    private JTextField currentVinField;
+    private JTextField currentPlateField;
+
     private static final Color CARD_BORDER_COLOR = new Color(20,20,20);
     private static final int CARD_BORDER_THICKNESS = 1;
 
-    public UserMainWindow(String username, int userId) {
-        super("Главное окно - " + username);
+    public UserMainWindow() {
+        super("Главное окно");
         initWindow();
         initComponents();
     }
@@ -33,17 +38,31 @@ public class UserMainWindow extends JFrame implements UserMainView {
     private void initComponents() {
         setLayout(new BorderLayout());
 
+        // Панель уведомлений
+        notificationPanel = new JPanel();
+        notificationPanel.setLayout(new BoxLayout(notificationPanel, BoxLayout.Y_AXIS));
+        notificationPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        add(notificationPanel, BorderLayout.NORTH);
+
         menuBar = new JMenuBar();
 
         JMenu fileMenu = new JMenu("Файл");
         JMenuItem logoutItem = new JMenuItem("Выйти");
         fileMenu.add(logoutItem);
 
+        JMenu userMenu = new JMenu("Пользователь");
+        JMenuItem profileItem = new JMenuItem("Личный кабинет");
+        userMenu.add(profileItem);
+
         JMenu carMenu = new JMenu("Автомобиль");
         JMenuItem addCarItem = new JMenuItem("Добавить автомобиль");
         carMenu.add(addCarItem);
 
         menuBar.add(fileMenu);
+        menuBar.add(userMenu);
         menuBar.add(carMenu);
         setJMenuBar(menuBar);
 
@@ -155,13 +174,12 @@ public class UserMainWindow extends JFrame implements UserMainView {
     @Override
     public void showAddCarDialog(CarDialogCallback callback) {
         JTextField nameField = new JTextField();
-        JTextField vinField = new JTextField();
-        JTextField plateField = new JTextField();
+        currentVinField = new JTextField();
+        currentPlateField = new JTextField();
         JTextArea problemArea = new JTextArea(3, 20);
         JLabel imageLabel = new JLabel("Фото не выбрано");
         JButton uploadBtn = new JButton("Загрузить фото");
 
-        // Переменная для хранения загруженного изображения
         BufferedImage[] uploadedImage = {null};
 
         uploadBtn.addActionListener(e -> {
@@ -173,28 +191,35 @@ public class UserMainWindow extends JFrame implements UserMainView {
                     imageLabel.setText("Фото выбрано: " + fileChooser.getSelectedFile().getName());
                 } catch (IOException ex) {
                     showError("Ошибка при загрузке изображения");
-                }finally {
-                    fileChooser.setVisible(false);
                 }
             }
         });
 
         Object[] message = {
                 "Название:", nameField,
-                "VIN:", vinField,
-                "Гос. номер:", plateField,
+                "VIN:", currentVinField,
+                "Гос. номер:", currentPlateField,
                 "Описание проблемы:", new JScrollPane(problemArea),
                 uploadBtn, imageLabel
         };
 
-        int option = JOptionPane.showConfirmDialog(
-                this,
-                message,
-                "Добавить автомобиль",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
+        int option;
+        do {
+            option = JOptionPane.showConfirmDialog(
+                    this,
+                    message,
+                    "Добавить автомобиль",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE);
 
-        if (option == JOptionPane.OK_OPTION) {
+            if (option != JOptionPane.OK_OPTION) {
+                return;
+            }
+
+            // Сбросим цвета перед валидацией
+            highlightVinField(false);
+            highlightLicensePlateField(false);
+
             String imagePath = null;
             if (uploadedImage[0] != null) {
                 try {
@@ -208,16 +233,21 @@ public class UserMainWindow extends JFrame implements UserMainView {
 
             boolean success = callback.processInput(
                     nameField.getText(),
-                    vinField.getText(),
-                    plateField.getText(),
+                    currentVinField.getText(),
+                    currentPlateField.getText(),
                     problemArea.getText(),
-                    imagePath); // Передаем путь к изображению
+                    imagePath);
 
             if (success) {
                 showMessage("Автомобиль успешно добавлен");
+                return;
             }
-        }
+
+            // Если неуспешно — оставляем окно открытым (цикл продолжится)
+
+        } while (true);
     }
+
 
     @Override
     public void showEditCarDialog(Car car, CarDialogCallback callback) {
@@ -394,6 +424,101 @@ public class UserMainWindow extends JFrame implements UserMainView {
     }
 
     @Override
+    public void showNotification(String message, boolean isWarning) {
+        JPanel notificationCard = new JPanel();
+        notificationCard.setLayout(new BorderLayout());
+        notificationCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(isWarning ? Color.ORANGE : Color.BLUE, 1),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        notificationCard.setBackground(isWarning ? new Color(255, 250, 205) : new Color(225, 245, 254));
+
+        JLabel messageLabel = new JLabel(message);
+        JButton closeButton = new JButton("×");
+        closeButton.setBorder(BorderFactory.createEmptyBorder());
+        closeButton.setContentAreaFilled(false);
+        closeButton.setFocusPainted(false);
+        closeButton.setFont(new Font("Arial", Font.BOLD, 12));
+
+        closeButton.addActionListener(e -> {
+            notificationPanel.remove(notificationCard);
+            notificationPanel.revalidate();
+            notificationPanel.repaint();
+        });
+
+        notificationCard.add(messageLabel, BorderLayout.CENTER);
+        notificationCard.add(closeButton, BorderLayout.EAST);
+
+        notificationPanel.add(notificationCard);
+        notificationPanel.revalidate();
+        notificationPanel.repaint();
+    }
+
+    @Override
+    public void showProfileDialog(User user, ProfileCallback callback) {
+        JDialog dialog = new JDialog(this, "Личный кабинет", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(400, 300);
+        dialog.setResizable(false);
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JTextField loginField = new JTextField(user.getLogin());
+        loginField.setEditable(false);
+        JTextField fullNameField = new JTextField(user.getFullName() != null ? user.getFullName() : "");
+        JTextField phoneField = new JTextField(user.getPhone() != null ? user.getPhone() : "");
+
+        contentPanel.add(new JLabel("Логин:"));
+        contentPanel.add(loginField);
+        contentPanel.add(Box.createVerticalStrut(10));
+        contentPanel.add(new JLabel("ФИО:"));
+        contentPanel.add(fullNameField);
+        contentPanel.add(Box.createVerticalStrut(10));
+        contentPanel.add(new JLabel("Телефон:"));
+        contentPanel.add(phoneField);
+
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton("Сохранить");
+        JButton cancelButton = new JButton("Отмена");
+
+        saveButton.addActionListener(e -> {
+            boolean success = callback.processProfileInput(
+                    fullNameField.getText(),
+                    phoneField.getText()
+            );
+            if (success) {
+                dialog.dispose();
+            }
+        });
+
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+
+        dialog.add(contentPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    @Override
+    public void highlightVinField(boolean highlight) {
+        if (currentVinField != null) {
+            currentVinField.setBackground(highlight ? new Color(255, 220, 220) : Color.WHITE);
+        }
+    }
+
+    @Override
+    public void highlightLicensePlateField(boolean highlight) {
+        if (currentPlateField != null) {
+            currentPlateField.setBackground(highlight ? new Color(255, 220, 220) : Color.WHITE);
+        }
+    }
+
+    @Override
     public void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Ошибка", JOptionPane.ERROR_MESSAGE);
     }
@@ -401,6 +526,13 @@ public class UserMainWindow extends JFrame implements UserMainView {
     @Override
     public void showMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Сообщение", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    @Override
+    public void clearNotifications() {
+        notificationPanel.removeAll();
+        notificationPanel.revalidate();
+        notificationPanel.repaint();
     }
 
     @Override
@@ -424,6 +556,12 @@ public class UserMainWindow extends JFrame implements UserMainView {
     public void setLogoutListener(ActionListener listener) {
         JMenu fileMenu = menuBar.getMenu(0);
         fileMenu.getItem(0).addActionListener(listener);
+    }
+
+    @Override
+    public void setProfileListener(ActionListener listener) {
+        JMenu userMenu = menuBar.getMenu(1);
+        userMenu.getItem(0).addActionListener(listener);
     }
 
     @Override

@@ -20,7 +20,7 @@ public class WindowFactory {
     }
 
     public static UserMainView createUserMainView(String username, int userId) {
-        return new UserMainWindow(username, userId);
+        return new UserMainWindow();
     }
 
     public static WorkerMainView createWorkerMainView(String username) {
