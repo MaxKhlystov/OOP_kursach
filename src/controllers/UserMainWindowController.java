@@ -41,9 +41,6 @@ public class UserMainWindowController {
         if (currentUser.getPhone() == null || currentUser.getPhone().trim().isEmpty()) {
             view.showNotification("Пожалуйста, заполните ваш номер телефона в личном кабинете", true);
         }
-    }
-
-    private void checkNoCarsNotification() {
         List<Car> userCars = databaseManager.getUserCars(userId);
         if (userCars.isEmpty()) {
             view.showNotification("У вас нет ни одного автомобиля. Добавьте автомобиль через меню 'Автомобиль'", false);
@@ -52,17 +49,13 @@ public class UserMainWindowController {
 
     private void handleProfile(ActionEvent e) {
         view.showProfileDialog(currentUser, (fullName, phone) -> {
-            if (fullName.isEmpty() || phone.isEmpty()) {
-                view.showError("Все поля должны быть заполнены!");
-                return false;
-            }
-
+            // Эта проверка теперь дублируется в showProfileDialog, можно убрать
             boolean success = databaseManager.updateUserProfile(userId, fullName, phone);
             if (success) {
                 currentUser.setFullName(fullName);
                 currentUser.setPhone(phone);
                 view.showMessage("Профиль успешно обновлен");
-                checkProfileCompleteness();
+                loadUserCars(); // Это обновит уведомления
                 return true;
             } else {
                 view.showError("Ошибка при обновлении профиля");
@@ -75,9 +68,11 @@ public class UserMainWindowController {
         List<Car> userCars = databaseManager.getUserCars(userId);
         view.clearMainPanel();
         view.clearNotifications();
-        checkProfileCompleteness();
-        checkNoCarsNotification();
 
+        // Сначала проверяем заполненность профиля
+        checkProfileCompleteness();
+
+        // Затем проверяем наличие автомобилей
         if (userCars.isEmpty()) {
             view.showNoCarsMessage();
         } else {

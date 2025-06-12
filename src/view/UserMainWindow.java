@@ -248,7 +248,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
         } while (true);
     }
 
-
     @Override
     public void showEditCarDialog(Car car, CarDialogCallback callback) {
         JDialog dialog = new JDialog(this, "Редактировать автомобиль", true);
@@ -460,6 +459,7 @@ public class UserMainWindow extends JFrame implements UserMainView {
         dialog.setLayout(new BorderLayout());
         dialog.setSize(400, 300);
         dialog.setResizable(false);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
@@ -484,6 +484,11 @@ public class UserMainWindow extends JFrame implements UserMainView {
         JButton cancelButton = new JButton("Отмена");
 
         saveButton.addActionListener(e -> {
+            if (fullNameField.getText().isEmpty() || phoneField.getText().isEmpty()) {
+                showError("Все поля должны быть заполнены!");
+                return;
+            }
+
             boolean success = callback.processProfileInput(
                     fullNameField.getText(),
                     phoneField.getText()
@@ -548,7 +553,7 @@ public class UserMainWindow extends JFrame implements UserMainView {
 
     @Override
     public void setAddCarListener(ActionListener listener) {
-        JMenu carMenu = menuBar.getMenu(1);
+        JMenu carMenu = menuBar.getMenu(2);
         carMenu.getItem(0).addActionListener(listener);
     }
 
