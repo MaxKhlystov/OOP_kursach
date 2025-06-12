@@ -457,7 +457,7 @@ public class UserMainWindow extends JFrame implements UserMainView {
     public void showProfileDialog(User user, ProfileCallback callback) {
         JDialog dialog = new JDialog(this, "Личный кабинет", true);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(400, 300);
+        dialog.setSize(400, 350); // Увеличили высоту для новой кнопки
         dialog.setResizable(false);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
@@ -479,8 +479,10 @@ public class UserMainWindow extends JFrame implements UserMainView {
         contentPanel.add(new JLabel("Телефон:"));
         contentPanel.add(phoneField);
 
-        JPanel buttonPanel = new JPanel();
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
         JButton saveButton = new JButton("Сохранить");
+        JButton deleteAccountButton = new JButton("Удалить аккаунт");
+        deleteAccountButton.setForeground(Color.RED);
         JButton cancelButton = new JButton("Отмена");
 
         saveButton.addActionListener(e -> {
@@ -498,15 +500,37 @@ public class UserMainWindow extends JFrame implements UserMainView {
             }
         });
 
+        deleteAccountButton.addActionListener(e -> {
+            showDeleteAccountConfirmation(confirmed -> {
+                if (confirmed) {
+                    callback.onAccountDeleteRequested();
+                    dialog.dispose();
+                }
+            });
+        });
+
         cancelButton.addActionListener(e -> dialog.dispose());
 
         buttonPanel.add(saveButton);
+        buttonPanel.add(deleteAccountButton);
         buttonPanel.add(cancelButton);
 
         dialog.add(contentPanel, BorderLayout.CENTER);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
+    }
+
+    @Override
+    public void showDeleteAccountConfirmation(ConfirmationCallback callback) {
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                "Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить!",
+                "Подтверждение удаления аккаунта",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        callback.onResult(option == JOptionPane.YES_OPTION);
     }
 
     @Override

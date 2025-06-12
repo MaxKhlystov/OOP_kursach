@@ -48,18 +48,33 @@ public class UserMainWindowController {
     }
 
     private void handleProfile(ActionEvent e) {
-        view.showProfileDialog(currentUser, (fullName, phone) -> {
-            // Эта проверка теперь дублируется в showProfileDialog, можно убрать
-            boolean success = databaseManager.updateUserProfile(userId, fullName, phone);
-            if (success) {
-                currentUser.setFullName(fullName);
-                currentUser.setPhone(phone);
-                view.showMessage("Профиль успешно обновлен");
-                loadUserCars(); // Это обновит уведомления
-                return true;
-            } else {
-                view.showError("Ошибка при обновлении профиля");
-                return false;
+        view.showProfileDialog(currentUser, new UserMainView.ProfileCallback() {
+            @Override
+            public boolean processProfileInput(String fullName, String phone) {
+                boolean success = databaseManager.updateUserProfile(userId, fullName, phone);
+                if (success) {
+                    currentUser.setFullName(fullName);
+                    currentUser.setPhone(phone);
+                    view.showMessage("Профиль успешно обновлен");
+                    loadUserCars();
+                    return true;
+                } else {
+                    view.showError("Ошибка при обновлении профиля");
+                    return false;
+                }
+            }
+
+            @Override
+            public void onAccountDeleteRequested() {
+                // Удаляем вызов showDeleteAccountConfirmation здесь
+                boolean success = databaseManager.deleteUser(userId);
+                if (success) {
+                    view.showMessage("Ваш аккаунт и все связанные автомобили успешно удалены");
+                    view.close();
+                    view.navigateToAuth();
+                } else {
+                    view.showError("Не удалось удалить аккаунт");
+                }
             }
         });
     }
@@ -86,10 +101,14 @@ public class UserMainWindowController {
     }
 
     private void handleAddCar(ActionEvent e) {
+        if (currentUser.isProfileIncomplete()) {
+            view.showError("Нельзя добавить автомобиль. Заполните профиль (ФИО и телефон) в личном кабинете.");
+            return;
+        }
+
         view.showAddCarDialog((name, vin, plate, problem, imagePath) -> {
             boolean hasError = false;
 
-            // Сброс выделения перед валидацией
             view.highlightVinField(false);
             view.highlightLicensePlateField(false);
 
@@ -116,10 +135,11 @@ public class UserMainWindowController {
             }
 
             if (hasError) {
-                return false; // Не закрываем диалог
+                return false;
             }
 
-            Car newCar = new Car(name, vin, plate, userId, problem, imagePath);
+            // Статус по умолчанию "В ремонте"
+            Car newCar = new Car(name, vin, plate, userId, problem, imagePath, "В ремонте");
             boolean success = databaseManager.addCar(newCar) != null;
             if (success) {
                 loadUserCars();

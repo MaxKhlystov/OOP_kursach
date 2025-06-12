@@ -21,6 +21,8 @@ public interface UserMainView {
     void showDeleteConfirmation(String carName, ConfirmationCallback callback);
     void showLogoutOptions(LogoutCallback callback);
     void showProfileDialog(User user, ProfileCallback callback);
+    void showDeleteAccountConfirmation(ConfirmationCallback callback);
+
 
     void showError(String message);
     void showMessage(String message);
@@ -50,8 +52,9 @@ public interface UserMainView {
         void onChoice(int choice);
     }
 
-    @FunctionalInterface
-    interface ProfileCallback {
+    public interface ProfileCallback {
         boolean processProfileInput(String fullName, String phone);
+        void onAccountDeleteRequested(); // добавить этот метод
     }
+
 }

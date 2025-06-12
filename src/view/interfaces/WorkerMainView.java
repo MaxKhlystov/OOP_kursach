@@ -1,7 +1,7 @@
 package view.interfaces;
 
 import model.Car;
-import javax.swing.*;
+import java.awt.event.ActionListener;
 import java.util.List;
 
 public interface WorkerMainView {
@@ -11,9 +11,10 @@ public interface WorkerMainView {
     void showAllCars(List<Car> cars);
     void updateCarsTable();
     void clearSelection();
+    void setViewTitle(String title);
 
     // Диалоговые окна
-    void showStatusChangeDialog(Car car);
+    String showStatusChangeDialog(Car car, String[] statuses);
     void showError(String message);
     void showMessage(String message);
 
@@ -21,7 +22,13 @@ public interface WorkerMainView {
     void close();
     void navigateToAuth();
 
-    void setLogoutListener(java.awt.event.ActionListener listener);
-    void setStatusChangeListener(java.awt.event.ActionListener listener);
-    void setRefreshListener(java.awt.event.ActionListener listener);
+    // Слушатели
+    void setLogoutListener(ActionListener listener);
+    void setStatusChangeListener(ActionListener listener);
+    void setRefreshListener(ActionListener listener);
+    void setToggleViewListener(ActionListener listener);
+
+    // Получение выбранных данных
+    int getSelectedCarRow();
+    int getSelectedCarId();
 }

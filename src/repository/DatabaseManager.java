@@ -27,8 +27,8 @@ public class DatabaseManager {
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT UNIQUE NOT NULL," +
                     "password TEXT NOT NULL," +
-                    "full_name TEXT," +            // Добавлено
-                    "phone TEXT" +                 // Добавлено
+                    "full_name TEXT," +
+                    "phone TEXT" +
                     ")";
             stmt.execute(sqlUsers);
             System.out.println("Таблица users успешно создана/проверена");
@@ -58,6 +58,9 @@ public class DatabaseManager {
     private void createDatabaseCars() {
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              Statement stmt = conn.createStatement()) {
+
+            stmt.execute("PRAGMA foreign_keys = ON");
+
             String sqlCars = "CREATE TABLE IF NOT EXISTS cars (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "name TEXT NOT NULL," +
@@ -65,11 +68,12 @@ public class DatabaseManager {
                     "license_plate TEXT NOT NULL UNIQUE," +
                     "owner_id INTEGER NOT NULL," +
                     "problem_description TEXT," +
-                    "image_path TEXT," +  // Новое поле для хранения пути к изображению
+                    "image_path TEXT," +
+                    "status TEXT DEFAULT 'В ремонте'," +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                     "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE)";
             stmt.execute(sqlCars);
-            System.out.println("Таблицы успешно созданы/проверены");
+            System.out.println("Таблица cars успешно создана/проверена");
         } catch (SQLException e) {
             System.err.println("Ошибка при создании таблиц:");
             e.printStackTrace();
@@ -123,30 +127,6 @@ public class DatabaseManager {
         }
     }
 
-    public User getUserByLogin(String login) {
-        String sql = "SELECT id, login, full_name, phone FROM users WHERE login = ?";
-        try (Connection conn = DriverManager.getConnection(DB_users_URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, login);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return new User(
-                        rs.getInt("id"),
-                        rs.getString("login"),
-                        rs.getString("full_name"),
-                        rs.getString("phone")
-                );
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Ошибка при получении данных пользователя:");
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public boolean updateUserProfile(int userId, String fullName, String phone) {
         String sql = "UPDATE users SET full_name = ?, phone = ? WHERE id = ?";
 
@@ -190,6 +170,36 @@ public class DatabaseManager {
         return null;
     }
 
+    public boolean deleteUser(int userId) {
+        String deleteCarsSql = "DELETE FROM cars WHERE owner_id = ?";
+
+        try (Connection connCars = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmtCars = connCars.prepareStatement(deleteCarsSql)) {
+
+            pstmtCars.setInt(1, userId);
+            pstmtCars.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при удалении автомобилей пользователя:");
+            e.printStackTrace();
+            return false;
+        }
+
+        String deleteUserSql = "DELETE FROM users WHERE id = ?";
+
+        try (Connection connUsers = DriverManager.getConnection(DB_users_URL);
+             PreparedStatement pstmtUsers = connUsers.prepareStatement(deleteUserSql)) {
+
+            pstmtUsers.setInt(1, userId);
+            return pstmtUsers.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при удалении пользователя:");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean registerWorker(String login, String password, String key) {
         if (!key.equals("OOP")) {
             System.out.println("Неверный ключ доступа");
@@ -229,8 +239,8 @@ public class DatabaseManager {
     }
 
     public Car addCar(Car car) {
-        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path) " +
-                "VALUES(?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path, status) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -240,7 +250,8 @@ public class DatabaseManager {
             pstmt.setString(3, car.getLicensePlate());
             pstmt.setInt(4, car.getOwnerId());
             pstmt.setString(5, car.getProblemDescription());
-            pstmt.setString(6, car.getImagePath());  // Добавляем путь к изображению
+            pstmt.setString(6, car.getImagePath());
+            pstmt.setString(7, car.getStatus());
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
@@ -256,7 +267,8 @@ public class DatabaseManager {
                             car.getLicensePlate(),
                             car.getOwnerId(),
                             car.getProblemDescription(),
-                            car.getImagePath()  // Сохраняем путь к изображению
+                            car.getImagePath(),
+                            car.getStatus()
                     );
                 }
             }
@@ -295,7 +307,7 @@ public class DatabaseManager {
 
     public static List<Car> getUserCars(int ownerId) {
         List<Car> cars = new ArrayList<>();
-        String sql = "SELECT id, name, vin, license_plate, created_at, problem_description, image_path " +
+        String sql = "SELECT id, name, vin, license_plate, created_at, problem_description, image_path, status " +
                 "FROM cars WHERE owner_id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
@@ -312,7 +324,8 @@ public class DatabaseManager {
                         rs.getString("license_plate"),
                         ownerId,
                         rs.getString("problem_description"),
-                        rs.getString("image_path")  // Получаем путь к изображению
+                        rs.getString("image_path"),
+                        rs.getString("status")
                 );
                 cars.add(car);
             }
@@ -322,6 +335,85 @@ public class DatabaseManager {
             e.printStackTrace();
         }
         return cars;
+    }
+
+    public List<Car> getCarsByStatus(String status) {
+        List<Car> cars = new ArrayList<>();
+        String sql = "SELECT c.*, u.full_name, u.phone FROM cars c " +
+                "LEFT JOIN users u ON c.owner_id = u.id " +
+                "WHERE c.status = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, status);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Car car = new Car(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("vin"),
+                        rs.getString("license_plate"),
+                        rs.getInt("owner_id"),
+                        rs.getString("problem_description"),
+                        rs.getString("image_path"),
+                        rs.getString("status")
+                );
+                cars.add(car);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при получении автомобилей по статусу:");
+            e.printStackTrace();
+        }
+        return cars;
+    }
+
+    public Car getCarById(int carId) {
+        String sql = "SELECT * FROM cars WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, carId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return new Car(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("vin"),
+                        rs.getString("license_plate"),
+                        rs.getInt("owner_id"),
+                        rs.getString("problem_description"),
+                        rs.getString("image_path"),
+                        rs.getString("status")
+                );
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка при получении автомобиля по ID:");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean updateCarStatus(int carId, String newStatus) {
+        String sql = "UPDATE cars SET status = ? WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newStatus);
+            pstmt.setInt(2, carId);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при обновлении статуса автомобиля:");
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public List<Car> getAllCars() {
@@ -340,7 +432,8 @@ public class DatabaseManager {
                         rs.getString("license_plate"),
                         rs.getInt("owner_id"),
                         rs.getString("problem_description"),
-                        rs.getString("image_path")  // Получаем путь к изображению
+                        rs.getString("image_path"),
+                        rs.getString("status")
                 );
                 cars.add(car);
             }
@@ -380,7 +473,7 @@ public class DatabaseManager {
             if (rs.next()) {
                 return rs.getInt("id");
             }
-            return -1; // или бросить исключение
+            return -1;
 
         } catch (SQLException e) {
             System.err.println("Ошибка при получении ID пользователя:");
