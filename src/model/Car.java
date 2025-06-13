@@ -11,7 +11,9 @@ public class Car {
     private LocalDateTime createdAt;
     private String problemDescription;
     private String imagePath;
-    private String status; // Добавлено поле статуса
+    private String status;
+    private LocalDateTime startRepairTime;
+    private LocalDateTime endRepairTime;
 
     public Car(String name, String vin, String licensePlate, int ownerId, String imagePath, String status) {
         this.name = name;
@@ -34,7 +36,6 @@ public class Car {
         this.status = status;
     }
 
-    // Геттеры и сеттеры
     public int getId() { return id; }
     public String getName() { return name; }
     public String getVin() { return vin; }
@@ -42,14 +43,22 @@ public class Car {
     public int getOwnerId() { return ownerId; }
     public String getProblemDescription() { return problemDescription; }
     public String getImagePath() { return imagePath; }
-    public String getStatus() { return status; } // Новый геттер
+    public String getStatus() { return status; }
+    public LocalDateTime getStartRepairTime() { return startRepairTime; }
+    public LocalDateTime getEndRepairTime() { return endRepairTime; }
 
+    public void setEndRepairTime(LocalDateTime endRepairTime) {
+        this.endRepairTime = endRepairTime;
+    }
+    public void setStartRepairTime(LocalDateTime startRepairTime) {
+        this.startRepairTime = startRepairTime;
+    }
     public void setName(String name) { this.name = name; }
     public void setLicensePlate(String licensePlate) { this.licensePlate = licensePlate; }
     public void setProblemDescription(String problemDescription) { this.problemDescription = problemDescription; }
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
     public void setVin(String vin) { this.vin = vin; }
-    public void setStatus(String status) { this.status = status; } // Новый сеттер
+    public void setStatus(String status) { this.status = status; }
 
     @Override
     public String toString() {

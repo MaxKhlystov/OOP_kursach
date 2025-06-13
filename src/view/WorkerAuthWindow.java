@@ -123,7 +123,7 @@ public class WorkerAuthWindow extends JFrame implements WorkerAuthView {
     public void navigateToMainWindow(String login, int userId) {
         this.setVisible(false);
         WorkerMainWindow workerMainWindow = new WorkerMainWindow(login);
-        new WorkerMainWindowController(workerMainWindow);
+        new WorkerMainWindowController(workerMainWindow, login);
         workerMainWindow.setVisible(true);
     }
 

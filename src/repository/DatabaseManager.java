@@ -4,6 +4,7 @@ import model.Car;
 import model.User;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,14 +40,17 @@ public class DatabaseManager {
         }
     }
 
-    private void createDatabaseWorkers(){
+    private void createDatabaseWorkers() {
         try (Connection conn = DriverManager.getConnection(DB_workers_URL);
              Statement stmt = conn.createStatement()) {
             String sqlWorkers = "CREATE TABLE IF NOT EXISTS workers (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "login TEXT UNIQUE NOT NULL," +
                     "password TEXT NOT NULL," +
-                    "access_key TEXT NOT NULL)";
+                    "access_key TEXT NOT NULL," +
+                    "full_name TEXT," +
+                    "phone TEXT" +
+                    ")";
             stmt.execute(sqlWorkers);
             System.out.println("Таблицы успешно созданы/проверены");
         } catch (SQLException e) {
@@ -61,6 +65,7 @@ public class DatabaseManager {
 
             stmt.execute("PRAGMA foreign_keys = ON");
 
+            // Основная таблица для текущих ремонтов
             String sqlCars = "CREATE TABLE IF NOT EXISTS cars (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "name TEXT NOT NULL," +
@@ -69,14 +74,123 @@ public class DatabaseManager {
                     "owner_id INTEGER NOT NULL," +
                     "problem_description TEXT," +
                     "image_path TEXT," +
-                    "status TEXT DEFAULT 'В ремонте'," +
+                    "status TEXT DEFAULT 'Нет статуса'," +
+                    "start_repair_time TIMESTAMP NULL," +
+                    "end_repair_time TIMESTAMP NULL," +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                     "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE)";
             stmt.execute(sqlCars);
-            System.out.println("Таблица cars успешно создана/проверена");
+
+            // Таблица для архивных (завершенных) ремонтов
+            String sqlArchive = "CREATE TABLE IF NOT EXISTS repairs_archive (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "car_id INTEGER NOT NULL," +
+                    "name TEXT NOT NULL," +
+                    "vin TEXT NOT NULL," +
+                    "license_plate TEXT NOT NULL," +
+                    "owner_id INTEGER NOT NULL," +
+                    "problem_description TEXT," +
+                    "image_path TEXT," +
+                    "status TEXT DEFAULT 'Ремонт выполнен'," +
+                    "start_repair_time TIMESTAMP NULL," +
+                    "end_repair_time TIMESTAMP NULL," +
+                    "created_at TIMESTAMP," +
+                    "archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "parts_used TEXT," +
+                    "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE)";
+            stmt.execute(sqlArchive);
+
+            System.out.println("Таблицы cars и repairs_archive успешно созданы/проверены");
         } catch (SQLException e) {
             System.err.println("Ошибка при создании таблиц:");
             e.printStackTrace();
+        }
+    }
+
+    public boolean archiveCompletedRepair(Car car, String partsUsed) {
+        String insertSql = "INSERT INTO repairs_archive (" +
+                "car_id, name, vin, license_plate, owner_id, problem_description, " +
+                "image_path, status, start_repair_time, end_repair_time, created_at, parts_used) " +
+                "SELECT id, name, vin, license_plate, owner_id, problem_description, " +
+                "image_path, status, start_repair_time, end_repair_time, created_at, ? " +
+                "FROM cars WHERE id = ?";
+
+        String deleteSql = "DELETE FROM cars WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL)) {
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+                 PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
+
+                // Копируем запись в архив
+                insertStmt.setString(1, partsUsed);
+                insertStmt.setInt(2, car.getId());
+                insertStmt.executeUpdate();
+
+                // Удаляем из основной таблицы
+                deleteStmt.setInt(1, car.getId());
+                deleteStmt.executeUpdate();
+
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+                return false;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public List<Car> getArchivedRepairs() {
+        List<Car> archivedCars = new ArrayList<>();
+        String sql = "SELECT * FROM repairs_archive ORDER BY archived_at DESC";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Car car = new Car(
+                        rs.getInt("car_id"),
+                        rs.getString("name"),
+                        rs.getString("vin"),
+                        rs.getString("license_plate"),
+                        rs.getInt("owner_id"),
+                        rs.getString("problem_description") != null ? rs.getString("problem_description") : "",
+                        rs.getString("image_path") != null ? rs.getString("image_path") : "",
+                        rs.getString("status")
+                );
+                Timestamp startRepairTime = rs.getTimestamp("start_repair_time");
+                if (startRepairTime != null) {
+                    car.setStartRepairTime(startRepairTime.toLocalDateTime());
+                }
+                Timestamp endRepairTime = rs.getTimestamp("end_repair_time");
+                if (endRepairTime != null) {
+                    car.setEndRepairTime(endRepairTime.toLocalDateTime());
+                }
+                archivedCars.add(car);
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка при загрузке архивных ремонтов:");
+            e.printStackTrace();
+        }
+        return archivedCars;
+    }
+
+    public boolean isCarArchived(int carId) {
+        String sql = "SELECT COUNT(*) FROM repairs_archive WHERE car_id = ?";
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, carId);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next() && rs.getInt(1) > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
@@ -170,6 +284,30 @@ public class DatabaseManager {
         return null;
     }
 
+    public List<User> getAllUsers() {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT id, login, full_name, phone FROM users";
+
+        try (Connection conn = DriverManager.getConnection(DB_users_URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                User user = new User(
+                        rs.getInt("id"),
+                        rs.getString("login"),
+                        rs.getString("full_name"),
+                        rs.getString("phone")
+                );
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка при получении списка пользователей:");
+            e.printStackTrace();
+        }
+        return users;
+    }
+
     public boolean deleteUser(int userId) {
         String deleteCarsSql = "DELETE FROM cars WHERE owner_id = ?";
 
@@ -239,8 +377,8 @@ public class DatabaseManager {
     }
 
     public Car addCar(Car car) {
-        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path, status) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path) " +
+                "VALUES(?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -251,7 +389,6 @@ public class DatabaseManager {
             pstmt.setInt(4, car.getOwnerId());
             pstmt.setString(5, car.getProblemDescription());
             pstmt.setString(6, car.getImagePath());
-            pstmt.setString(7, car.getStatus());
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
@@ -268,7 +405,7 @@ public class DatabaseManager {
                             car.getOwnerId(),
                             car.getProblemDescription(),
                             car.getImagePath(),
-                            car.getStatus()
+                            "Нет статуса"  // Устанавливаем статус по умолчанию
                     );
                 }
             }
@@ -399,18 +536,56 @@ public class DatabaseManager {
     }
 
     public boolean updateCarStatus(int carId, String newStatus) {
-        String sql = "UPDATE cars SET status = ? WHERE id = ?";
+        String sql = "UPDATE cars SET status = ?, start_repair_time = ? WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, newStatus);
-            pstmt.setInt(2, carId);
+            pstmt.setTimestamp(2, "В ремонте".equals(newStatus) ?
+                    Timestamp.valueOf(LocalDateTime.now()) : null);
+            pstmt.setInt(3, carId);
+
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean completeCarRepair(Car car, String partsUsed) {
+        String sql = "UPDATE cars SET status = 'Ремонт выполнен', end_repair_time = ?, " +
+                "problem_description = ? WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+            pstmt.setString(2, car.getProblemDescription() + "\nИспользованные детали: " + partsUsed);
+            pstmt.setInt(3, car.getId());
+
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateCarRepairInfo(Car car) {
+        String sql = "UPDATE cars SET problem_description = ?, status = ?, start_repair_time = ? WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, car.getProblemDescription());
+            pstmt.setString(2, car.getStatus());
+            pstmt.setTimestamp(3, Timestamp.valueOf(car.getStartRepairTime()));
+            pstmt.setInt(4, car.getId());
 
             return pstmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            System.err.println("Ошибка при обновлении статуса автомобиля:");
+            System.err.println("Ошибка при обновлении информации о ремонте:");
             e.printStackTrace();
             return false;
         }
@@ -480,5 +655,77 @@ public class DatabaseManager {
             e.printStackTrace();
             return -1;
         }
+    }
+
+    public boolean updateWorkerProfile(String login, String fullName, String phone) {
+        String sql = "UPDATE workers SET full_name = ?, phone = ? WHERE login = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_workers_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, fullName);
+            pstmt.setString(2, phone);
+            pstmt.setString(3, login);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Ошибка при обновлении профиля сотрудника:");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public User getWorkerByLogin(String login) {
+        String sql = "SELECT login, full_name, phone FROM workers WHERE login = ?";
+        try (Connection conn = DriverManager.getConnection(DB_workers_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, login);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return new User(
+                        -1, // ID не используется для сотрудников
+                        rs.getString("login"),
+                        rs.getString("full_name"),
+                        rs.getString("phone")
+                );
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка при получении данных сотрудника:");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<Car> getArchivedRepairsByOwner(int ownerId) {
+        List<Car> archivedCars = new ArrayList<>();
+        String sql = "SELECT * FROM repairs_archive WHERE owner_id = ? ORDER BY archived_at DESC";
+
+        try (Connection conn = DriverManager.getConnection(DB_cars_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, ownerId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Car car = new Car(
+                        rs.getInt("car_id"),
+                        rs.getString("name"),
+                        rs.getString("vin"),
+                        rs.getString("license_plate"),
+                        rs.getInt("owner_id"),
+                        rs.getString("problem_description"),
+                        rs.getString("image_path"),
+                        rs.getString("status")
+                );
+                archivedCars.add(car);
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка при загрузке архивных ремонтов:");
+            e.printStackTrace();
+        }
+        return archivedCars;
     }
 }

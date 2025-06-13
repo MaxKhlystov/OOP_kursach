@@ -38,7 +38,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
     private void initComponents() {
         setLayout(new BorderLayout());
 
-        // Панель уведомлений
         notificationPanel = new JPanel();
         notificationPanel.setLayout(new BoxLayout(notificationPanel, BoxLayout.Y_AXIS));
         notificationPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -176,7 +175,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
         JTextField nameField = new JTextField();
         currentVinField = new JTextField();
         currentPlateField = new JTextField();
-        JTextArea problemArea = new JTextArea(3, 20);
         JLabel imageLabel = new JLabel("Фото не выбрано");
         JButton uploadBtn = new JButton("Загрузить фото");
 
@@ -240,9 +238,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 showMessage("Автомобиль успешно добавлен");
                 return;
             }
-
-            // Если неуспешно — оставляем окно открытым (цикл продолжится)
-
         } while (true);
     }
 
@@ -269,7 +264,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
         BufferedImage[] currentImage = {null};
         String[] newImagePath = {null};
 
-        // Загрузка текущего изображения
         try {
             String imagePath = (car.getImagePath() != null && !car.getImagePath().isEmpty()) ?
                     car.getImagePath() : "default.png";
@@ -277,7 +271,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
             if (imageFile.exists()) {
                 currentImage[0] = ImageIO.read(imageFile);
             } else {
-                // Если файл не найден, используем дефолтное изображение
                 currentImage[0] = ImageIO.read(new File(ImageUtils.MEDIA_PATH + "default.png"));
             }
             ImageIcon icon = new ImageIcon(currentImage[0].getScaledInstance(150, 100, Image.SCALE_SMOOTH));
@@ -296,7 +289,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
                         currentImage[0] = img;
                         ImageIcon icon = new ImageIcon(img.getScaledInstance(150, 100, Image.SCALE_SMOOTH));
                         imageLabel.setIcon(icon);
-                        // Генерируем уникальное имя файла
                         String fileName = "car_" + System.currentTimeMillis() + ".jpg";
                         newImagePath[0] = fileName;
                         dialog.pack();
@@ -306,8 +298,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
                 }
             }
         });
-
-        // Добавляем компоненты в contentPanel
         contentPanel.add(new JLabel("Название:"));
         contentPanel.add(nameField);
         contentPanel.add(Box.createVerticalStrut(5));
@@ -331,7 +321,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
         filePanel.add(uploadBtn);
         contentPanel.add(filePanel);
         dialog.add(contentPanel, BorderLayout.CENTER);
-        // Кнопки OK и Cancel
         JPanel buttonPanel = new JPanel();
         JButton okBtn = new JButton("OK");
         JButton cancelBtn = new JButton("Отмена");
@@ -341,8 +330,6 @@ public class UserMainWindow extends JFrame implements UserMainView {
             if (finalImagePath == null || finalImagePath.isEmpty()) {
                 finalImagePath = "default.png";
             }
-
-            // Сохраняем новое изображение, если оно было загружено
             if (newImagePath[0] != null && currentImage[0] != null) {
                 try {
                     ImageUtils.saveImage(currentImage[0], newImagePath[0]);
@@ -351,24 +338,20 @@ public class UserMainWindow extends JFrame implements UserMainView {
                     return;
                 }
             }
-
             boolean success = callback.processInput(
                     nameField.getText(),
                     vinField.getText(),
                     plateField.getText(),
                     finalImagePath);
-
             if (success) {
                 showMessage("Автомобиль успешно обновлен");
                 dialog.dispose();
             }
         });
-
         cancelBtn.addActionListener(ev -> dialog.dispose());
         buttonPanel.add(okBtn);
         buttonPanel.add(cancelBtn);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
-
         dialog.pack();
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);

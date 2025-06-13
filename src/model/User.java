@@ -30,7 +30,6 @@ public class User {
         return phone;
     }
 
-    // Сеттеры
     public void setLogin(String login) {
         this.login = login;
     }
@@ -43,7 +42,6 @@ public class User {
         this.phone = phone;
     }
 
-    // Удобный метод для проверки заполненности профиля
     public boolean isProfileIncomplete() {
         return (fullName == null || fullName.trim().isEmpty()) ||
                 (phone == null || phone.trim().isEmpty());
@@ -51,11 +49,6 @@ public class User {
 
     @Override
     public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", login='" + login + '\'' +
-                ", fullName='" + fullName + '\'' +
-                ", phone='" + phone + '\'' +
-                '}';
+        return fullName;
     }
 }

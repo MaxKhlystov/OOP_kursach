@@ -6,16 +6,17 @@ import repository.DatabaseManager;
 import view.interfaces.WorkerMainView;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.List;
 
 public class WorkerMainWindow extends JFrame implements WorkerMainView {
-    private JTable carsTable;
-    private JButton logoutButton;
-    private JButton changeStatusButton;
-    private JButton refreshButton;
-    private JButton toggleViewButton;
-    private JLabel statusLabel;
+    private JTable inProgressTable;
+    private JTable completedTable;
+    private JTable archiveTable;
+    private JTabbedPane tabbedPane;
+    private JMenuBar menuBar;
 
     public WorkerMainWindow(String username) {
         super("Панель сотрудника");
@@ -28,68 +29,131 @@ public class WorkerMainWindow extends JFrame implements WorkerMainView {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel headerPanel = new JPanel(new BorderLayout());
+        menuBar = new JMenuBar();
 
-        // Заголовок с именем пользователя
-        JLabel titleLabel = new JLabel("Сотрудник: " + username, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        headerPanel.add(titleLabel, BorderLayout.CENTER);
+        JMenu fileMenu = new JMenu("Файл");
+        JMenuItem logoutItem = new JMenuItem("Выйти");
+        fileMenu.add(logoutItem);
 
-        statusLabel = new JLabel("Автомобили в ремонте", SwingConstants.RIGHT);
-        headerPanel.add(statusLabel, BorderLayout.EAST);
+        JMenu userMenu = new JMenu("Пользователь");
+        JMenuItem profileItem = new JMenuItem("Личный кабинет");
+        userMenu.add(profileItem);
 
-        add(headerPanel, BorderLayout.NORTH);
+        JMenu carMenu = new JMenu("Автомобиль");
+        JMenuItem addCarItem = new JMenuItem("Добавить автомобиль");
+        JMenuItem changeStatusItem = new JMenuItem("Изменить статус");
+        carMenu.add(addCarItem);
+        carMenu.add(changeStatusItem);
+
+        menuBar.add(fileMenu);
+        menuBar.add(userMenu);
+        menuBar.add(carMenu);
+        setJMenuBar(menuBar);
     }
 
     private void initComponents() {
         setLayout(new BorderLayout());
 
-        // Таблица автомобилей
-        carsTable = new JTable();
-        JScrollPane scrollPane = new JScrollPane(carsTable);
-        add(scrollPane, BorderLayout.CENTER);
+        tabbedPane = new JTabbedPane();
 
-        // Панель кнопок
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        changeStatusButton = new JButton("Изменить статус");
-        refreshButton = new JButton("Обновить");
-        toggleViewButton = new JButton("Показать выполненные");
-        logoutButton = new JButton("Выйти");
+        inProgressTable = new JTable();
+        JScrollPane inProgressScrollPane = new JScrollPane(inProgressTable);
 
-        buttonPanel.add(changeStatusButton);
-        buttonPanel.add(refreshButton);
-        buttonPanel.add(toggleViewButton);
-        buttonPanel.add(logoutButton);
-        add(buttonPanel, BorderLayout.SOUTH);
+        completedTable = new JTable();
+        JScrollPane completedScrollPane = new JScrollPane(completedTable);
+
+        archiveTable = new JTable();
+        JScrollPane archiveScrollPane = new JScrollPane(archiveTable);
+
+        tabbedPane.addTab("Текущие ремонты", inProgressScrollPane);
+        tabbedPane.addTab("Клиенты", completedScrollPane); // Измененное название
+        tabbedPane.addTab("Архив ремонтов", archiveScrollPane);
+
+        add(tabbedPane, BorderLayout.CENTER);
     }
 
     @Override
-    public void showAllCars(List<Car> cars) {
-        String[] columnNames = {"ID", "Марка", "VIN", "Гос. номер", "Владелец", "Телефон", "Статус", "Описание проблемы"};
-        Object[][] data = new Object[cars.size()][8];
+    public void showAllCars(List<Car> activeCars, List<Car> archivedCars) {
+        // Таблица для текущих ремонтов
+        String[] inProgressColumns = {"ID", "Марка", "VIN", "Гос. номер", "Владелец", "Телефон", "Начало ремонта", "Статус"};
+        DefaultTableModel inProgressModel = new DefaultTableModel(inProgressColumns, 0);
 
-        for (int i = 0; i < cars.size(); i++) {
-            Car car = cars.get(i);
-            User owner = new DatabaseManager().getUserById(car.getOwnerId());
-            String ownerName = (owner != null && owner.getFullName() != null) ? owner.getFullName() : "Не указано";
-            String ownerPhone = (owner != null && owner.getPhone() != null) ? owner.getPhone() : "Не указан";
+        // Таблица для клиентов (бывшие архивные машины)
+        String[] clientsColumns = {"ID", "Марка", "VIN", "Гос. номер", "Владелец", "Телефон", "Последний ремонт"};
+        DefaultTableModel clientsModel = new DefaultTableModel(clientsColumns, 0);
 
-            data[i][0] = car.getId();
-            data[i][1] = car.getName();
-            data[i][2] = car.getVin();
-            data[i][3] = car.getLicensePlate();
-            data[i][4] = ownerName;
-            data[i][5] = ownerPhone;
-            data[i][6] = car.getStatus();
-            data[i][7] = car.getProblemDescription();
-        }
-
-        carsTable.setModel(new DefaultTableModel(data, columnNames) {
+        // Таблица для архива
+        String[] archiveColumns = {"ID", "Марка", "VIN", "Гос. номер", "Владелец", "Телефон", "Дата ремонта", "Комплектующие"};
+        DefaultTableModel archiveModel = new DefaultTableModel(archiveColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 7; // Делаем только колонку с комплектующими редактируемой
             }
-        });
+        };
+
+        // Обрабатываем активные автомобили
+        for (Car car : activeCars) {
+            User owner = new DatabaseManager().getUserById(car.getOwnerId());
+            String ownerName = owner != null ? owner.getFullName() : "Не указано";
+            String ownerPhone = owner != null ? owner.getPhone() : "Не указан";
+
+            if (!"Нет статуса".equals(car.getStatus())) {
+                inProgressModel.addRow(new Object[]{
+                        car.getId(),
+                        car.getName(),
+                        car.getVin(),
+                        car.getLicensePlate(),
+                        ownerName,
+                        ownerPhone,
+                        car.getStartRepairTime() != null ? car.getStartRepairTime().toString() : "Не начат",
+                        car.getStatus()
+                });
+            }
+        }
+
+        // Обрабатываем архивные автомобили для вкладки "Клиенты"
+        for (Car car : archivedCars) {
+            User owner = new DatabaseManager().getUserById(car.getOwnerId());
+            String ownerName = owner != null ? owner.getFullName() : "Не указано";
+            String ownerPhone = owner != null ? owner.getPhone() : "Не указан";
+
+            clientsModel.addRow(new Object[]{
+                    car.getId(),
+                    car.getName(),
+                    car.getVin(),
+                    car.getLicensePlate(),
+                    ownerName,
+                    ownerPhone,
+                    car.getEndRepairTime() != null ? car.getEndRepairTime().toString() : "Не указано"
+            });
+        }
+
+        // Обрабатываем архивные автомобили для вкладки "Архив"
+        for (Car car : archivedCars) {
+            User owner = new DatabaseManager().getUserById(car.getOwnerId());
+            String ownerName = owner != null ? owner.getFullName() : "Не указано";
+            String ownerPhone = owner != null ? owner.getPhone() : "Не указан";
+
+            // Извлекаем использованные комплектующие из описания проблемы
+            String partsUsed = extractPartsUsed(car.getProblemDescription());
+
+            archiveModel.addRow(new Object[]{
+                    car.getId(),
+                    car.getName(),
+                    car.getVin(),
+                    car.getLicensePlate(),
+                    ownerName,
+                    ownerPhone,
+                    car.getEndRepairTime() != null ? car.getEndRepairTime().toString() : "Не указано",
+                    partsUsed
+            });
+        }
+
+        inProgressTable.setModel(inProgressModel);
+        completedTable.setModel(clientsModel);
+        archiveTable.setModel(archiveModel);
+
+        setupPartsComboBox();
     }
 
     @Override
@@ -108,26 +172,39 @@ public class WorkerMainWindow extends JFrame implements WorkerMainView {
 
     @Override
     public int getSelectedCarRow() {
-        return carsTable.getSelectedRow();
+        int selectedTab = tabbedPane.getSelectedIndex();
+        if (selectedTab == 0) {
+            return inProgressTable.getSelectedRow();
+        } else if (selectedTab == 1 && completedTable != null) {
+            return completedTable.getSelectedRow();
+        }
+        return -1;
     }
 
     @Override
     public int getSelectedCarId() {
-        int row = carsTable.getSelectedRow();
+        int row = getSelectedCarRow();
         if (row >= 0) {
-            return (int) carsTable.getModel().getValueAt(row, 0);
+            int selectedTab = tabbedPane.getSelectedIndex();
+            if (selectedTab == 0) {
+                return (int) inProgressTable.getModel().getValueAt(row, 0);
+            } else if (selectedTab == 1 && completedTable != null) {
+                return (int) completedTable.getModel().getValueAt(row, 0);
+            }
         }
         return -1;
     }
 
     @Override
     public void updateCarsTable() {
-        ((DefaultTableModel) carsTable.getModel()).fireTableDataChanged();
+        ((DefaultTableModel) inProgressTable.getModel()).fireTableDataChanged();
+        ((DefaultTableModel) completedTable.getModel()).fireTableDataChanged();
     }
 
     @Override
     public void clearSelection() {
-        carsTable.clearSelection();
+        inProgressTable.clearSelection();
+        completedTable.clearSelection();
     }
 
     @Override
@@ -146,30 +223,104 @@ public class WorkerMainWindow extends JFrame implements WorkerMainView {
     }
 
     @Override
-    public void setLogoutListener(java.awt.event.ActionListener listener) {
-        logoutButton.addActionListener(listener);
+    public void showProfileDialog(User user, ProfileCallback callback) {
+        JDialog dialog = new JDialog(this, "Личный кабинет сотрудника", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(400, 300);
+        dialog.setResizable(false);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JTextField loginField = new JTextField(user.getLogin());
+        loginField.setEditable(false);
+        JTextField fullNameField = new JTextField(user.getFullName() != null ? user.getFullName() : "");
+        JTextField phoneField = new JTextField(user.getPhone() != null ? user.getPhone() : "");
+
+        contentPanel.add(new JLabel("Логин:"));
+        contentPanel.add(loginField);
+        contentPanel.add(Box.createVerticalStrut(10));
+        contentPanel.add(new JLabel("ФИО:"));
+        contentPanel.add(fullNameField);
+        contentPanel.add(Box.createVerticalStrut(10));
+        contentPanel.add(new JLabel("Телефон:"));
+        contentPanel.add(phoneField);
+
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton("Сохранить");
+        JButton cancelButton = new JButton("Отмена");
+
+        saveButton.addActionListener(e -> {
+            if (fullNameField.getText().isEmpty() || phoneField.getText().isEmpty()) {
+                showError("Все поля должны быть заполнены!");
+                return;
+            }
+
+            boolean success = callback.processProfileInput(
+                    fullNameField.getText(),
+                    phoneField.getText()
+            );
+            if (success) {
+                dialog.dispose();
+            }
+        });
+
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+
+        dialog.add(contentPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     @Override
-    public void setStatusChangeListener(java.awt.event.ActionListener listener) {
-        changeStatusButton.addActionListener(listener);
+    public void setLogoutListener(ActionListener listener) {
+        JMenu fileMenu = menuBar.getMenu(0);
+        fileMenu.getItem(0).addActionListener(listener);
     }
 
     @Override
-    public void setRefreshListener(java.awt.event.ActionListener listener) {
-        refreshButton.addActionListener(listener);
+    public void setStatusChangeListener(ActionListener listener) {
+        JMenu carMenu = menuBar.getMenu(2);
+        carMenu.getItem(1).addActionListener(listener);
     }
 
     @Override
-    public void setToggleViewListener(java.awt.event.ActionListener listener) {
-        toggleViewButton.addActionListener(listener);
+    public void setRefreshListener(ActionListener listener) {
+        // Можно добавить кнопку обновления в меню
+    }
+
+    @Override
+    public void setToggleViewListener(ActionListener listener) {
+        // Теперь не нужно, так как есть вкладки
     }
 
     @Override
     public void setViewTitle(String title) {
-        statusLabel.setText(title);
-        toggleViewButton.setText(title.contains("ремонте") ?
-                "Показать выполненные" : "Показать в ремонте");
+        // Теперь не нужно, так как есть вкладки
+    }
+
+    private String extractPartsUsed(String problemDescription) {
+        if (problemDescription == null) return "";
+        // Логика извлечения информации о комплектующих из описания проблемы
+        if (problemDescription.contains("Использованные детали:")) {
+            return problemDescription.split("Использованные детали:")[1].trim();
+        }
+        return problemDescription;
+    }
+
+    private void setupPartsComboBox() {
+        // Примерный список комплектующих
+        String[] parts = {"Двигатель", "Тормозная система", "Подвеска", "КПП", "Электроника", "Кузовные детали"};
+
+        TableColumn partsColumn = archiveTable.getColumnModel().getColumn(7);
+        JComboBox<String> comboBox = new JComboBox<>(parts);
+        partsColumn.setCellEditor(new DefaultCellEditor(comboBox));
     }
 
     @Override
@@ -186,5 +337,17 @@ public class WorkerMainWindow extends JFrame implements WorkerMainView {
                 return;
             }
         }
+    }
+
+    @Override
+    public void setProfileListener(ActionListener listener) {
+        JMenu userMenu = menuBar.getMenu(1);
+        userMenu.getItem(0).addActionListener(listener);
+    }
+
+    @Override
+    public void setAddCarListener(ActionListener listener) {
+        JMenu carMenu = menuBar.getMenu(2);
+        carMenu.getItem(0).addActionListener(listener);
     }
 }

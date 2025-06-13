@@ -84,10 +84,8 @@ public class UserMainWindowController {
         view.clearMainPanel();
         view.clearNotifications();
 
-        // Сначала проверяем заполненность профиля
         checkProfileCompleteness();
 
-        // Затем проверяем наличие автомобилей
         if (userCars.isEmpty()) {
             view.showNoCarsMessage();
         } else {
@@ -138,8 +136,7 @@ public class UserMainWindowController {
                 return false;
             }
 
-            // Статус по умолчанию "В ремонте"
-            Car newCar = new Car(name, vin, plate, userId, imagePath, "В ремонте");
+            Car newCar = new Car(name, vin, plate, userId, imagePath, "Нет статуса");
             boolean success = databaseManager.addCar(newCar) != null;
             if (success) {
                 loadUserCars();
