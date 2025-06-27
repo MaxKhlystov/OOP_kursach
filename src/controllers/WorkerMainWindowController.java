@@ -102,24 +102,32 @@ public class WorkerMainWindowController {
     }
 
     private void handleAddCar(ActionEvent e) {
+        // 1. Загружаем свежие данные перед открытием диалога
         List<User> users = dbManager.getAllUsers();
         Map<User, List<Car>> userCars = new HashMap<>();
 
         for (User user : users) {
-            userCars.put(user, dbManager.getUserCars(user.getId()));
+            // Загружаем текущие авто пользователя
+            List<Car> cars = dbManager.getUserCars(user.getId());
+            // Добавляем архивные авто этого пользователя
+            List<Car> archivedCars = dbManager.getArchivedRepairsByOwner(user.getId());
+
+            // Объединяем списки
+            List<Car> allCars = new ArrayList<>();
+            allCars.addAll(cars);
+            allCars.addAll(archivedCars);
+
+            userCars.put(user, allCars);
         }
 
-        List<Car> archivedCars = dbManager.getArchivedRepairs();
-        for (Car car : archivedCars) {
-            User owner = dbManager.getUserById(car.getOwnerId());
-            if (owner != null) {
-                userCars.computeIfAbsent(owner, k -> new ArrayList<>()).add(car);
-            }
-        }
-
+        // 2. Открываем диалог
         RepairDialog.showDialog(users, userCars, (selectedCar, problem) -> {
             try {
-                if (dbManager.isCarArchived(selectedCar.getId())) {
+                // 3. Проверяем, архивный ли это авто
+                boolean isArchived = dbManager.isCarArchived(selectedCar.getId());
+
+                if (isArchived) {
+                    // 4. Для архивного авто создаем НОВУЮ запись
                     Car newCar = new Car(
                             selectedCar.getName(),
                             selectedCar.getVin(),
@@ -133,18 +141,20 @@ public class WorkerMainWindowController {
 
                     if (dbManager.addCar(newCar) != null) {
                         view.showMessage("Автомобиль добавлен на ремонт");
+                        // 5. Сразу обновляем данные
                         loadAllCars();
                     } else {
                         view.showError("Ошибка при добавлении автомобиля");
                     }
-                }
-                else {
+                } else {
+                    // 6. Для текущего авто обновляем статус
                     selectedCar.setProblemDescription(problem);
                     selectedCar.setStatus("В ремонте");
                     selectedCar.setStartRepairTime(LocalDateTime.now());
 
                     if (dbManager.updateCarRepairInfo(selectedCar)) {
                         view.showMessage("Автомобиль добавлен на ремонт");
+                        // 7. Сразу обновляем данные
                         loadAllCars();
                     } else {
                         view.showError("Ошибка при обновлении статуса");

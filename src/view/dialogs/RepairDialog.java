@@ -27,33 +27,27 @@ public class RepairDialog extends JDialog {
         this.dbManager = new DatabaseManager();
         setTitle("Добавление автомобиля на ремонт");
         setModal(true);
-        setSize(400, 350); // Увеличим высоту для лучшего отображения
+        setSize(400, 350);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // 1. Собираем все автомобили (активные + архивные)
         Set<Car> allCars = new HashSet<>();
         for (List<Car> cars : userCars.values()) {
             allCars.addAll(cars);
         }
 
-        // Добавляем архивные автомобили
         List<Car> archivedCars = dbManager.getArchivedRepairs();
         allCars.addAll(archivedCars);
 
-        // 2. Настройка компонентов
         userComboBox = new JComboBox<>(users.toArray(new User[0]));
         carComboBox = new JComboBox<>();
         problemField = new JTextArea(5, 20);
         startRepairButton = new JButton("Начать ремонт");
 
-        // 3. Обработчик выбора пользователя
         userComboBox.addActionListener(e -> updateCarComboBox(userCars));
 
-        // 4. Инициализация первоначального списка автомобилей
         updateCarComboBox(userCars);
 
-        // 5. Создание формы
         JPanel form = new JPanel(new GridLayout(0, 1, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -64,11 +58,9 @@ public class RepairDialog extends JDialog {
         form.add(new JLabel("Описание проблемы:"));
         form.add(new JScrollPane(problemField));
 
-        // 6. Кнопка с обработчиком
         startRepairButton.addActionListener(e -> {
             Car selectedCar = (Car) carComboBox.getSelectedItem();
             String description = problemField.getText().trim();
-
             if (selectedCar == null) {
                 JOptionPane.showMessageDialog(this,
                         "Выберите автомобиль",
@@ -76,7 +68,6 @@ public class RepairDialog extends JDialog {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
             if (description.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
                         "Введите описание проблемы",
@@ -84,8 +75,6 @@ public class RepairDialog extends JDialog {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            // Проверяем, не находится ли автомобиль уже в ремонте
             if (!dbManager.isCarArchived(selectedCar.getId()) &&
                     !"Нет статуса".equals(selectedCar.getStatus())) {
                 JOptionPane.showMessageDialog(this,
@@ -94,7 +83,6 @@ public class RepairDialog extends JDialog {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
             callback.onAddRepair(selectedCar, description);
             dispose();
         });
@@ -106,7 +94,6 @@ public class RepairDialog extends JDialog {
     private void updateCarComboBox(Map<User, List<Car>> userCars) {
         User selectedUser = (User) userComboBox.getSelectedItem();
         if (selectedUser != null) {
-            // Берем автомобили пользователя + архивные
             List<Car> userCarsList = userCars.getOrDefault(selectedUser, new ArrayList<>());
             List<Car> archivedCars = dbManager.getArchivedRepairsByOwner(selectedUser.getId());
 

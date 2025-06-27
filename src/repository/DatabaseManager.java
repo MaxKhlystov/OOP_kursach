@@ -377,8 +377,8 @@ public class DatabaseManager {
     }
 
     public Car addCar(Car car) {
-        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path) " +
-                "VALUES(?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO cars(name, vin, license_plate, owner_id, problem_description, image_path, status, start_repair_time) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(DB_cars_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -389,6 +389,8 @@ public class DatabaseManager {
             pstmt.setInt(4, car.getOwnerId());
             pstmt.setString(5, car.getProblemDescription());
             pstmt.setString(6, car.getImagePath());
+            pstmt.setString(7, car.getStatus());
+            pstmt.setTimestamp(8, Timestamp.valueOf(car.getStartRepairTime()));
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
@@ -397,25 +399,15 @@ public class DatabaseManager {
 
             try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    return new Car(
-                            generatedKeys.getInt(1),
-                            car.getName(),
-                            car.getVin(),
-                            car.getLicensePlate(),
-                            car.getOwnerId(),
-                            car.getProblemDescription(),
-                            car.getImagePath(),
-                            "Нет статуса"  // Устанавливаем статус по умолчанию
-                    );
+                    car.setId(generatedKeys.getInt(1));
+                    return car;
                 }
             }
-            return null;
-
         } catch (SQLException e) {
             System.err.println("Ошибка при добавлении автомобиля:");
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     public boolean updateCar(Car car) {

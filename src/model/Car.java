@@ -59,6 +59,7 @@ public class Car {
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
     public void setVin(String vin) { this.vin = vin; }
     public void setStatus(String status) { this.status = status; }
+    public void setId(int id){ this.id = id; }
 
     @Override
     public String toString() {
